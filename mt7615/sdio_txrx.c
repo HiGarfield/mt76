@@ -188,6 +188,8 @@ static int mt7663s_tx_run_queue(struct mt76_dev *dev, struct mt76_queue *q)
 		struct mt76_queue_entry *e = &q->entry[q->first];
 		int err, len = e->skb->len;
 
+		smp_rmb();
+
 		if (mt7663s_tx_update_sched(dev, e, mcu))
 			break;
 
