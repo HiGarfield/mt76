@@ -791,6 +791,9 @@ mt7615_mcu_add_beacon_offload(struct mt7615_dev *dev,
 	};
 	struct sk_buff *skb;
 
+	if (!enable)
+		goto out;
+
 	skb = ieee80211_beacon_get_template(hw, vif, &offs);
 	if (!skb)
 		return -EINVAL;
@@ -820,6 +823,7 @@ mt7615_mcu_add_beacon_offload(struct mt7615_dev *dev,
 	}
 	dev_kfree_skb(skb);
 
+	out:
 	return __mt76_mcu_send_msg(&dev->mt76, MCU_EXT_CMD_BCN_OFFLOAD,
 				   &req, sizeof(req), true);
 }
@@ -1850,8 +1854,8 @@ mt7615_mcu_uni_add_beacon_offload(struct mt7615_dev *dev,
 			__le16 tim_ie_pos;
 			__le16 csa_ie_pos;
 			__le16 bcc_ie_pos;
-			/* 0: enable beacon offload
-			 * 1: disable beacon offload
+			/* 0: disable beacon offload
+			 * 1: enable beacon offload
 			 * 2: update probe respond offload
 			 */
 			u8 enable;
@@ -1873,6 +1877,9 @@ mt7615_mcu_uni_add_beacon_offload(struct mt7615_dev *dev,
 		},
 	};
 	struct sk_buff *skb;
+
+	if (!enable)
+		goto out;
 
 	skb = ieee80211_beacon_get_template(mt76_hw(dev), vif, &offs);
 	if (!skb)
@@ -1898,8 +1905,10 @@ mt7615_mcu_uni_add_beacon_offload(struct mt7615_dev *dev,
 	}
 	dev_kfree_skb(skb);
 
+	out:
 	return __mt76_mcu_send_msg(&dev->mt76, MCU_UNI_CMD_BSS_INFO_UPDATE,
 				   &req, sizeof(req), true);
+}
 }
 
 static int
