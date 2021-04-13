@@ -2083,6 +2083,8 @@ void mt7615_dma_reset(struct mt7615_dev *dev)
 		mt76_queue_rx_reset(dev, i);
 	}
 
+	mt76_tx_status_check(&dev->mt76, NULL, true);
+
 	mt76_set(dev, MT_WPDMA_GLO_CFG,
 		 MT_WPDMA_GLO_CFG_RX_DMA_EN | MT_WPDMA_GLO_CFG_TX_DMA_EN |
 		 MT_WPDMA_GLO_CFG_TX_WRITEBACK_DONE);
