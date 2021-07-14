@@ -633,6 +633,42 @@ static int mt7615_mcu_init_download(struct mt7615_dev *dev, u32 addr,
 }
 
 static int
+mt7615_mcu_muar_config(struct mt7615_dev *dev, struct ieee80211_vif *vif,
+		       bool bssid, bool enable)
+{
+	struct mt7615_vif *mvif = (struct mt7615_vif *)vif->drv_priv;
+	u32 idx = mvif->omac_idx - REPEATER_BSSID_START;
+	u32 mask = dev->omac_mask >> 32 & ~BIT(idx);
+	const u8 *addr = vif->addr;
+	struct {
+		u8 mode;
+		u8 force_clear;
+		u8 clear_bitmap[8];
+		u8 entry_count;
+		u8 write;
+
+		u8 index;
+		u8 bssid;
+		u8 addr[ETH_ALEN];
+	} __packed req = {
+		.mode = !!mask || enable,
+		.entry_count = 1,
+		.write = 1,
+
+		.index = idx * 2 + bssid,
+	};
+
+	if (bssid)
+		addr = vif->bss_conf.bssid;
+
+	if (enable)
+		ether_addr_copy(req.addr, addr);
+
+	return __mt76_mcu_send_msg(&dev->mt76, MCU_EXT_CMD_MUAR_UPDATE, &req,
+				 sizeof(req), true);
+}
+
+static int
 mt7615_mcu_add_dev(struct mt7615_dev *dev, struct ieee80211_vif *vif,
 		   bool enable)
 {
@@ -666,6 +702,9 @@ mt7615_mcu_add_dev(struct mt7615_dev *dev, struct ieee80211_vif *vif,
 			.band_idx = mvif->band_idx,
 		},
 	};
+
+	if (mvif->omac_idx >= REPEATER_BSSID_START)
+		return mt7615_mcu_muar_config(dev, vif, false, enable);
 
 	memcpy(data.tlv.omac_addr, vif->addr, ETH_ALEN);
 	return __mt76_mcu_send_msg(&dev->mt76, MCU_EXT_CMD_DEV_INFO_UPDATE,
@@ -1249,6 +1288,9 @@ mt7615_mcu_add_bss(struct mt7615_phy *phy, struct ieee80211_vif *vif,
 	struct mt7615_dev *dev = phy->dev;
 	struct sk_buff *skb;
 
+	if (mvif->omac_idx >= REPEATER_BSSID_START)
+		mt7615_mcu_muar_config(dev, vif, true, enable);
+
 	skb = mt7615_mcu_alloc_sta_req(dev, mvif, NULL);
 	if (IS_ERR(skb))
 		return PTR_ERR(skb);
@@ -1258,7 +1300,8 @@ mt7615_mcu_add_bss(struct mt7615_phy *phy, struct ieee80211_vif *vif,
 
 	mt7615_mcu_bss_basic_tlv(skb, vif, sta, enable);
 
-	if (enable && mvif->omac_idx > EXT_BSSID_START)
+	if (enable && mvif->omac_idx >= EXT_BSSID_START &&
+	    mvif->omac_idx < REPEATER_BSSID_START)
 		mt7615_mcu_bss_ext_tlv(skb, mvif);
 
 	return __mt76_mcu_skb_send_msg(&dev->mt76, skb,
@@ -2637,13 +2680,13 @@ int mt7615_mcu_set_dbdc(struct mt7615_dev *dev)
 	} while (0)
 
 	for (i = 0; i < 4; i++) {
-		bool band = !!(ext_phy->omac_mask & BIT(i));
+		bool band = !!(ext_phy->omac_mask & BIT_ULL(i));
 
 		ADD_DBDC_ENTRY(DBDC_TYPE_BSS, i, band);
 	}
 
 	for (i = 0; i < 14; i++) {
-		bool band = !!(ext_phy->omac_mask & BIT(0x11 + i));
+		bool band = !!(ext_phy->omac_mask & BIT_ULL(0x11 + i));
 
 		ADD_DBDC_ENTRY(DBDC_TYPE_MBSS, i, band);
 	}
