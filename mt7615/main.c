@@ -1247,8 +1247,6 @@ const struct ieee80211_ops mt7615_ops = {
 	.sched_scan_stop = mt7615_stop_sched_scan,
 	.remain_on_channel = mt7615_remain_on_channel,
 	.cancel_remain_on_channel = mt7615_cancel_remain_on_channel,
-	CFG80211_TESTMODE_CMD(mt76_testmode_cmd)
-	CFG80211_TESTMODE_DUMP(mt76_testmode_dump)
 #ifdef CONFIG_PM
 	.suspend = mt7615_suspend,
 	.resume = mt7615_resume,
