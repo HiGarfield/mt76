@@ -6,6 +6,7 @@
  */
 
 #include <linux/firmware.h>
+#include <linux/module.h>
 #include "mt7615.h"
 #include "mcu.h"
 #include "mac.h"
