@@ -69,9 +69,11 @@ void mt76_tx_free(struct mt76_dev *dev)
 {
 	struct mt76_txwi_cache *t;
 
+	local_bh_disable();
 	while ((t = __mt76_get_txwi(dev)) != NULL)
 		dma_unmap_single(dev->dev, t->dma_addr, dev->drv->txwi_size,
 				 DMA_TO_DEVICE);
+	local_bh_enable();
 }
 
 static int
