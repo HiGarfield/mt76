@@ -220,9 +220,14 @@ mt76_tx_status_skb_get(struct mt76_dev *dev, struct mt76_wcid *wcid, int pktid,
 		if (cb->pktid == pktid)
 			return skb;
 
-		if (pktid >= 0 && !time_after(jiffies, cb->jiffies +
-					      MT_TX_STATUS_SKB_TIMEOUT))
-			continue;
+		if (pktid >= 0) {
+			if (!(cb->flags & MT_TX_CB_DMA_DONE))
+				continue;
+
+			if (!time_is_after_jiffies(cb->jiffies +
+						   MT_TX_STATUS_SKB_TIMEOUT))
+				continue;
+		}
 
 		__mt76_tx_status_skb_done(dev, skb, MT_TX_CB_TXS_FAILED |
 						    MT_TX_CB_TXS_DONE, list);
