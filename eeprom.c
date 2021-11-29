@@ -56,7 +56,7 @@ mt76_get_of_eeprom(struct mt76_dev *dev, int len)
 	offset += be32_to_cpup(list);
 	ret = mtd_read(mtd, offset, len, &retlen, dev->eeprom.data);
 	put_mtd_device(mtd);
-	if (ret)
+	if (ret && !mtd_is_bitflip(ret))
 		goto out_put_node;
 
 	if (retlen < len) {
