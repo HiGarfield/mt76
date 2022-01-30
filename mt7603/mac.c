@@ -215,13 +215,22 @@ void mt7603_filter_tx(struct mt7603_dev *dev, int idx, bool abort)
 void mt7603_wtbl_set_smps(struct mt7603_dev *dev, struct mt7603_sta *sta,
 			  bool enabled)
 {
-	u32 addr = mt7603_wtbl1_addr(sta->wcid.idx);
+	bool successful;
+	int num_retries;
+	u32 addr = mt7603_wtbl1_addr(sta->wcid.idx) + 2 * 4;
 
 	if (sta->smps == enabled)
 		return;
 
-	mt76_rmw_field(dev, addr + 2 * 4, MT_WTBL1_W2_SMPS, enabled);
-	if (mt76_poll(dev, addr + 2 * 4, MT_WTBL1_W2_SMPS, enabled, 15000))
+	num_retries = 3;
+	do
+	{
+		mt76_rmw_field(dev, addr, MT_WTBL1_W2_SMPS, enabled);
+		successful = mt76_poll(dev, addr, MT_WTBL1_W2_SMPS,
+								enabled, 15000);
+	} while (!successful && --num_retries);
+
+	if (successful)
 		sta->smps = enabled;
 }
 
