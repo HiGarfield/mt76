@@ -1038,6 +1038,7 @@ EXPORT_SYMBOL_GPL(mt76x02_update_channel);
 static void mt76x02_check_mac_err(struct mt76x02_dev *dev)
 {
 	if (dev->mt76.beacon_mask) {
+		/*****************************
 		if (mt76_rr(dev, MT_TX_STA_0) & MT_TX_STA_0_BEACONS) {
 			dev->beacon_hang_check = 0;
 			return;
@@ -1047,6 +1048,8 @@ static void mt76x02_check_mac_err(struct mt76x02_dev *dev)
 			return;
 
 		dev->beacon_hang_check = 0;
+		*****************************/
+		return;
 	} else {
 		u32 val = mt76_rr(dev, 0x10f4);
 		if (!(val & BIT(29)) || !(val & (BIT(7) | BIT(5))))
