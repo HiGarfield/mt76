@@ -415,12 +415,11 @@ EXPORT_SYMBOL_GPL(mt76_release_buffered_frames);
 
 static int
 mt76_txq_send_burst(struct mt76_phy *phy, struct mt76_sw_queue *sq,
-		    struct mt76_txq *mtxq)
+		    struct mt76_txq *mtxq, struct mt76_wcid *wcid)
 {
 	struct mt76_dev *dev = phy->dev;
 	struct ieee80211_txq *txq = mtxq_to_txq(mtxq);
 	enum mt76_txq_id qid = mt76_txq_get_qid(txq);
-	struct mt76_wcid *wcid = mtxq->wcid;
 	struct mt76_queue *hwq = sq->q;
 	struct ieee80211_tx_info *info;
 	struct sk_buff *skb;
@@ -522,8 +521,8 @@ mt76_txq_schedule_list(struct mt76_phy *phy, enum mt76_txq_id qid)
 			break;
 
 		mtxq = (struct mt76_txq *)txq->drv_priv;
-		wcid = mtxq->wcid;
-		if (wcid && test_bit(MT_WCID_FLAG_PS, &wcid->flags))
+		wcid = rcu_dereference(dev->wcid[mtxq->wcid]);
+		if (!wcid || test_bit(MT_WCID_FLAG_PS, &wcid->flags))
 			continue;
 
 		spin_lock_bh(&hwq->lock);
@@ -541,7 +540,7 @@ mt76_txq_schedule_list(struct mt76_phy *phy, enum mt76_txq_id qid)
 			spin_lock_bh(&hwq->lock);
 		}
 
-		n_frames = mt76_txq_send_burst(phy, sq, mtxq);
+		n_frames = mt76_txq_send_burst(phy, sq, mtxq, wcid);
 
 		spin_unlock_bh(&hwq->lock);
 

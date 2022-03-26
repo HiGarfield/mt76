@@ -236,7 +236,7 @@ struct mt76_wcid {
 
 struct mt76_txq {
 	struct mt76_sw_queue *swq;
-	struct mt76_wcid *wcid;
+	u16 wcid;
 
 	struct sk_buff_head retry_q;
 
