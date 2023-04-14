@@ -125,11 +125,14 @@ mt76_tx_status_unlock(struct mt76_dev *dev, struct sk_buff_head *list)
 
 	spin_unlock_bh(&dev->status_list.lock);
 
+	rcu_read_lock();
 	while ((skb = __skb_dequeue(list)) != NULL) {
 		hw = mt76_tx_status_get_hw(dev, skb);
+		spin_lock_bh(&dev->rx_lock);
 		ieee80211_tx_status(hw, skb);
+		spin_unlock_bh(&dev->rx_lock);
 	}
-
+	rcu_read_unlock();
 }
 EXPORT_SYMBOL_GPL(mt76_tx_status_unlock);
 
@@ -263,7 +266,9 @@ void mt76_tx_complete_skb(struct mt76_dev *dev, struct sk_buff *skb)
 
 	if (!skb->prev) {
 		hw = mt76_tx_status_get_hw(dev, skb);
+		spin_lock_bh(&dev->rx_lock);
 		ieee80211_free_txskb(hw, skb);
+		spin_unlock_bh(&dev->rx_lock);
 		return;
 	}
 

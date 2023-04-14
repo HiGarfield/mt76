@@ -388,7 +388,9 @@ free:
 #endif
 
 	dev_kfree_skb(tx_info.skb);
+	spin_lock_bh(&dev->rx_lock);
 	mt76_put_txwi(dev, t);
+	spin_unlock_bh(&dev->rx_lock);
 	return ret;
 }
 
