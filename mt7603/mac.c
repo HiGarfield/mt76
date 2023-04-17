@@ -959,6 +959,7 @@ mt7603_mac_write_txwi(struct mt7603_dev *dev, __le32 *txwi,
 	val = FIELD_PREP(MT_TXD2_FRAME_TYPE, frame_type) |
 	      FIELD_PREP(MT_TXD2_SUB_TYPE, frame_subtype) |
 	      FIELD_PREP(MT_TXD2_MULTICAST,
+			ieee80211_is_data(hdr->frame_control) &&
 			 is_multicast_ether_addr(hdr->addr1));
 	txwi[2] = cpu_to_le32(val);
 
