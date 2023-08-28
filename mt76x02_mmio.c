@@ -15,12 +15,16 @@ static void mt76x02_pre_tbtt_tasklet(unsigned long arg)
 {
 	struct mt76x02_dev *dev = (struct mt76x02_dev *)arg;
 	struct mt76_queue *q = dev->mt76.q_tx[MT_TXQ_PSD].q;
-	struct beacon_bc_data data = {};
+	struct beacon_bc_data data = {
+		.dev = dev,
+	};
 	struct sk_buff *skb;
 	int i;
 
 	if (mt76_hw(dev)->conf.flags & IEEE80211_CONF_OFFCHANNEL)
 		return;
+
+	__skb_queue_head_init(&data.q);
 
 	mt76x02_resync_beacon_timer(dev);
 
@@ -30,7 +34,10 @@ static void mt76x02_pre_tbtt_tasklet(unsigned long arg)
 
 	ieee80211_iterate_active_interfaces_atomic(mt76_hw(dev),
 		IEEE80211_IFACE_ITER_RESUME_ALL,
-		mt76x02_update_beacon_iter, dev);
+		mt76x02_update_beacon_iter, &data);
+
+	while ((skb = __skb_dequeue(&data.q)) != NULL)
+		mt76x02_mac_set_beacon(dev, skb);
 
 	mt76_wr(dev, MT_BCN_BYPASS_MASK,
 		0xff00 | ~(0xff00 >> dev->beacon_data_count));
