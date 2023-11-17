@@ -610,6 +610,7 @@ void mt76_set_channel(struct mt76_phy *phy)
 	struct cfg80211_chan_def *chandef = &hw->conf.chandef;
 	bool offchannel = hw->conf.flags & IEEE80211_CONF_OFFCHANNEL;
 	int timeout = HZ / 5;
+	bool was_scanning = test_bit(MT76_SCANNING, &phy->state);
 
 	wait_event_timeout(dev->tx_wait, !mt76_has_tx_pending(phy), timeout);
 	mt76_update_survey(dev);
@@ -624,7 +625,7 @@ void mt76_set_channel(struct mt76_phy *phy)
 	if (!offchannel)
 		phy->main_chan = chandef->chan;
 
-	if (chandef->chan != phy->main_chan)
+	if (chandef->chan != phy->main_chan || was_scanning)
 		memset(phy->chan_state, 0, sizeof(*phy->chan_state));
 }
 EXPORT_SYMBOL_GPL(mt76_set_channel);
