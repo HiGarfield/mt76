@@ -1047,7 +1047,7 @@ static void mt76x02_check_mac_err(struct mt76x02_dev *dev)
 			return;
 		}
 
-		if (dev->beacon_hang_check < 30)
+		if (dev->beacon_hang_check < 50)
 			return;
 
 	} else {
