@@ -239,4 +239,9 @@ enum mt7603_tx_header_format {
 #define MT_TXS4_F0_SEQNO		GENMASK(11, 0)
 #define MT_TXS4_F1_TSSI			GENMASK(11, 0)
 
+enum {
+	MT_TXS_MPDU_FMT = 0,
+	MT_TXS_PPDU_FMT = 2,
+};
+
 #endif

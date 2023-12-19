@@ -1321,7 +1321,7 @@ static bool mt7615_mac_add_txs_skb(struct mt7615_dev *dev,
 {
 	struct mt76_dev *mdev = &dev->mt76;
 	struct sk_buff_head list;
-	struct sk_buff *skb;
+	struct sk_buff *skb = NULL;
 
 	if (pid < MT_PACKET_ID_FIRST)
 		return false;
@@ -1329,7 +1329,9 @@ static bool mt7615_mac_add_txs_skb(struct mt7615_dev *dev,
 	trace_mac_txdone(mdev, sta->wcid.idx, pid);
 
 	mt76_tx_status_lock(mdev, &list);
-	skb = mt76_tx_status_skb_get(mdev, &sta->wcid, pid, &list);
+	if (le32_get_bits(txs_data[0], MT_TXS0_TXS_FORMAT) == MT_TXS_MPDU_FMT)
+		skb = mt76_tx_status_skb_get(mdev, &sta->wcid, pid, &list);
+
 	if (skb) {
 		struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
 

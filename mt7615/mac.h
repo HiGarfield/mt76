@@ -435,4 +435,9 @@ static inline u32 mt7615_mac_wtbl_addr(struct mt7615_dev *dev, int wcid)
 	return MT_WTBL_BASE(dev) + wcid * MT_WTBL_ENTRY_SIZE;
 }
 
+enum {
+	MT_TXS_MPDU_FMT = 0,
+	MT_TXS_PPDU_FMT = 2,
+};
+
 #endif
