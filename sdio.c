@@ -245,16 +245,19 @@ mt76s_tx_queue_skb_raw(struct mt76_dev *dev, enum mt76_txq_id qid,
 		       struct sk_buff *skb, u32 tx_info)
 {
 	struct mt76_queue *q = dev->q_tx[qid].q;
-	int ret = -ENOSPC, len = skb->len;
-
-	if (q->queued == q->ndesc)
-		goto error;
+	int ret, len = skb->len;
 
 	ret = mt76_skb_adjust_pad(skb);
 	if (ret)
 		goto error;
 
 	spin_lock_bh(&q->lock);
+
+	if (q->queued == q->ndesc) {
+		ret = -ENOSPC;
+		spin_unlock_bh(&q->lock);
+		goto error;
+	}
 
 	q->entry[q->head].buf_sz = len;
 	q->entry[q->head].skb = skb;
