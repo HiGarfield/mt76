@@ -358,10 +358,13 @@ int mt7915_mac_fill_rx(struct mt7915_dev *dev, struct sk_buff *skb)
 		struct mt7915_sta *msta;
 
 		msta = container_of(status->wcid, struct mt7915_sta, wcid);
-		spin_lock_bh(&dev->sta_poll_lock);
-		if (list_empty(&msta->poll_list))
-			list_add_tail(&msta->poll_list, &dev->sta_poll_list);
-		spin_unlock_bh(&dev->sta_poll_lock);
+
+		if (!test_bit(MT76_MCU_RESET, &dev->mphy.state)) {
+			spin_lock_bh(&dev->sta_poll_lock);
+			if (list_empty(&msta->poll_list))
+				list_add_tail(&msta->poll_list, &dev->sta_poll_list);
+			spin_unlock_bh(&dev->sta_poll_lock);
+		}
 	}
 
 	status->freq = mphy->chandef.chan->center_freq;
@@ -902,12 +905,14 @@ void mt7915_mac_tx_free(struct mt7915_dev *dev, struct sk_buff *skb)
 
 			msta = container_of(wcid, struct mt7915_sta, wcid);
 			phy = msta->vif->phy;
-			spin_lock_bh(&dev->sta_poll_lock);
-			if (list_empty(&msta->stats_list))
-				list_add_tail(&msta->stats_list, &phy->stats_list);
-			if (list_empty(&msta->poll_list))
-				list_add_tail(&msta->poll_list, &dev->sta_poll_list);
-			spin_unlock_bh(&dev->sta_poll_lock);
+			if (!test_bit(MT76_MCU_RESET, &dev->mphy.state)) {
+				spin_lock_bh(&dev->sta_poll_lock);
+				if (list_empty(&msta->stats_list))
+					list_add_tail(&msta->stats_list, &phy->stats_list);
+				if (list_empty(&msta->poll_list))
+					list_add_tail(&msta->poll_list, &dev->sta_poll_list);
+				spin_unlock_bh(&dev->sta_poll_lock);
+			}
 		}
 
 		msdu = FIELD_GET(MT_TX_FREE_MSDU_ID, info);
