@@ -354,6 +354,13 @@ mt7603_sta_assoc(struct mt76_dev *mdev, struct ieee80211_vif *vif,
 		 struct ieee80211_sta *sta)
 {
 	struct mt7603_dev *dev = container_of(mdev, struct mt7603_dev, mt76);
+	struct mt7603_sta *msta = (struct mt7603_sta *)sta->drv_priv;
+
+	/* Once association has happened, we need to make sure that the SMPS
+	 * mode is set again (if it's happened earlier, the firmware seems to forget
+	 * about it, at least in terms of the observed behaviour).
+	 */
+	msta->smps = ~0;
 
 	mt7603_wtbl_update_cap(dev, sta);
 }
