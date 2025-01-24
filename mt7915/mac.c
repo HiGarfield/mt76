@@ -1236,17 +1236,15 @@ void mt7915_mac_reset_work(struct work_struct *work)
 
 	tasklet_enable(&dev->mt76.tx_tasklet);
 
-	local_bh_disable();
 	napi_enable(&dev->mt76.tx_napi);
-	napi_schedule(&dev->mt76.tx_napi);
-
 	napi_enable(&dev->mt76.napi[0]);
-	napi_schedule(&dev->mt76.napi[0]);
-
 	napi_enable(&dev->mt76.napi[1]);
-	napi_schedule(&dev->mt76.napi[1]);
-
 	napi_enable(&dev->mt76.napi[2]);
+
+	local_bh_disable();
+	napi_schedule(&dev->mt76.tx_napi);
+	napi_schedule(&dev->mt76.napi[0]);
+	napi_schedule(&dev->mt76.napi[1]);
 	napi_schedule(&dev->mt76.napi[2]);
 	local_bh_enable();
 
