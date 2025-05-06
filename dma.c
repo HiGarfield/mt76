@@ -645,6 +645,7 @@ void mt76_dma_cleanup(struct mt76_dev *dev)
 {
 	int i;
 
+	napi_disable(&dev->tx_napi);
 	netif_napi_del(&dev->tx_napi);
 	for (i = 0; i < ARRAY_SIZE(dev->q_tx); i++)
 		mt76_dma_tx_cleanup(dev, i, true);
