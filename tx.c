@@ -302,7 +302,8 @@ mt76_tx(struct mt76_phy *phy, struct ieee80211_sta *sta,
 
 	if ((dev->drv->drv_flags & MT_DRV_HW_MGMT_TXQ) &&
 	    !ieee80211_is_data(hdr->frame_control) &&
-	    !ieee80211_is_bufferable_mmpdu(hdr->frame_control)) {
+	    (!ieee80211_is_bufferable_mmpdu(hdr->frame_control) ||
+	     ieee80211_is_deauth(hdr->frame_control))) {
 		qid = MT_TXQ_PSD;
 		skb_set_queue_mapping(skb, qid);
 	}
