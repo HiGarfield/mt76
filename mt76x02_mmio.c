@@ -6,6 +6,7 @@
 
 #include <linux/kernel.h>
 #include <linux/irq.h>
+#include <linux/delay.h>
 
 #include "mt76x02.h"
 #include "mt76x02_mcu.h"
@@ -445,6 +446,13 @@ static void mt76x02_reset_state(struct mt76x02_dev *dev)
 	dev->mt76.beacon_mask = 0;
 }
 
+static bool dma_is_busy(struct mt76x02_dev *dev)
+{
+	u32 dma_status = mt76_rr(dev, MT_WPDMA_GLO_CFG);
+    return dma_status & (MT_WPDMA_GLO_CFG_TX_DMA_EN |
+		MT_WPDMA_GLO_CFG_RX_DMA_EN);
+}
+
 static void mt76x02_watchdog_reset(struct mt76x02_dev *dev)
 {
 	u32 mask = dev->mt76.mmio.irqmask;
@@ -480,14 +488,30 @@ static void mt76x02_watchdog_reset(struct mt76x02_dev *dev)
 	mt76_wr(dev, MT_MAC_SYS_CTRL, 0);
 	mt76_clear(dev, MT_WPDMA_GLO_CFG,
 		   MT_WPDMA_GLO_CFG_TX_DMA_EN | MT_WPDMA_GLO_CFG_RX_DMA_EN);
-	usleep_range(5000, 10000);
+	usleep_range(20000, 30000);
+
+	if (dma_is_busy(dev)) {
+		for (i = 0; i < __MT_TXQ_MAX; i++)
+			mt76_queue_tx_cleanup(dev, i, true);
+		mt76_for_each_q_rx(&dev->mt76, i)
+			mt76_queue_rx_reset(dev, i);
+		mt76_clear(dev, MT_WPDMA_GLO_CFG,
+			   MT_WPDMA_GLO_CFG_TX_DMA_EN | MT_WPDMA_GLO_CFG_RX_DMA_EN);
+		usleep_range(10000, 20000);
+	}
+
 	mt76_wr(dev, MT_INT_SOURCE_CSR, 0xffffffff);
 
 	/* let fw reset DMA */
 	mt76_set(dev, 0x734, 0x3);
 
-	if (restart)
+	if (restart) {
+		int retry = 5;
+		while (--retry != 0 && dma_is_busy(dev)) {
+			usleep_range(5000, 10000);
+		}
 		mt76_mcu_restart(dev);
+	}
 
 	for (i = 0; i < __MT_TXQ_MAX; i++)
 		mt76_queue_tx_cleanup(dev, i, true);
@@ -522,12 +546,17 @@ static void mt76x02_watchdog_reset(struct mt76x02_dev *dev)
 		napi_enable(&dev->mt76.napi[i]);
 	}
 
+	msleep(5);
+
 	local_bh_disable();
 	napi_schedule(&dev->mt76.tx_napi);
 	mt76_for_each_q_rx(&dev->mt76, i) {
 		napi_schedule(&dev->mt76.napi[i]);
 	}
 	local_bh_enable();
+
+	if (dma_is_busy(dev))
+		restart = true;
 
 	if (restart) {
 		set_bit(MT76_RESTART, &dev->mphy.state);
