@@ -910,6 +910,8 @@ void mt76x02_tx_complete_skb(struct mt76_dev *mdev, enum mt76_txq_id qid,
 	struct mt76x02_txwi *txwi;
 	u8 *txwi_ptr;
 
+	dev->last_tx_activity = jiffies;
+
 	if (!e->txwi) {
 		dev_kfree_skb_any(e->skb);
 		return;

@@ -367,12 +367,15 @@ EXPORT_SYMBOL_GPL(mt76x02_mac_start);
 
 static bool mt76x02_tx_hang(struct mt76x02_dev *dev)
 {
-	u32 dma_idx, prev_dma_idx;
 	struct mt76_queue *q;
-	int i, tx_hang_queue_count = 0, total_tx_hang_check = 0;
+	u32 dma_idx, prev_dma_idx;
+	bool tx_stuck = false;
+	int i;
 
 	for (i = 0; i < 4; i++) {
 		q = dev->mt76.q_tx[i].q;
+		if (!q)
+			continue;
 
 		prev_dma_idx = dev->mt76.tx_dma_idx[i];
 		dma_idx = readl(&q->regs->dma_idx);
@@ -383,11 +386,19 @@ static bool mt76x02_tx_hang(struct mt76x02_dev *dev)
 			continue;
 		}
 
-		tx_hang_queue_count++;
-		total_tx_hang_check += ++dev->tx_hang_check[i];
+		if (++dev->tx_hang_check[i] >= MT_TX_HANG_TH)
+			tx_stuck = true;
 	}
 
-	return tx_hang_queue_count >= 3 || total_tx_hang_check >= MT_TX_HANG_TH * 4;
+	if (!tx_stuck)
+		return false;
+
+	/* TX-only hang detection */
+	if (time_after(jiffies, dev->last_tx_activity + 5 * HZ)) {
+		return true;
+	}
+
+	return false;
 }
 
 static void mt76x02_key_sync(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
@@ -593,6 +604,7 @@ static void mt76x02_check_tx_hang(struct mt76x02_dev *dev)
 
 	dev->tx_hang_reset++;
 	memset(dev->tx_hang_check, 0, sizeof(dev->tx_hang_check));
+	dev->last_tx_activity = jiffies;
 	memset(dev->mt76.tx_dma_idx, 0xff,
 	       sizeof(dev->mt76.tx_dma_idx));
 }

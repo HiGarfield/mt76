@@ -119,6 +119,7 @@ struct mt76x02_dev {
 	u32 tx_hang_reset;
 	u8 tx_hang_check[4];
 	u8 beacon_hang_check;
+	unsigned long last_tx_activity;
 	u8 mcu_timeout;
 
 	struct mt76x02_rate_power rate_power;

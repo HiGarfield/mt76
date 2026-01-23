@@ -157,6 +157,8 @@ void mt76x02_init_device(struct mt76x02_dev *dev)
 	hw->max_rate_tries = 1;
 	hw->extra_tx_headroom = 2;
 
+	dev->last_tx_activity = jiffies;
+
 	if (mt76_is_usb(&dev->mt76)) {
 		hw->extra_tx_headroom += sizeof(struct mt76x02_txwi) +
 					 MT_DMA_HDR_LEN;
