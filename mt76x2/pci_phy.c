@@ -114,6 +114,21 @@ void mt76x2_phy_set_antenna(struct mt76x02_dev *dev)
 	mt76_wr(dev, MT_BBP(AGC, 0), val);
 }
 
+static void
+mt76x2_fix_5ghz_chandef(struct cfg80211_chan_def *chandef)
+{
+	struct ieee80211_channel *chan = chandef->chan;
+	u8 channel = chan->hw_value;
+
+	if (chan->band != NL80211_BAND_5GHZ)
+		return;
+
+	if (channel == 165)
+		cfg80211_chandef_create(chandef, chan, NL80211_CHAN_HT20);
+	else if (channel == 161 && chandef->width == NL80211_CHAN_WIDTH_80)
+		cfg80211_chandef_create(chandef, chan, NL80211_CHAN_HT40PLUS);
+}
+
 int mt76x2_phy_set_channel(struct mt76x02_dev *dev,
 			   struct cfg80211_chan_def *chandef)
 {
@@ -148,6 +163,9 @@ int mt76x2_phy_set_channel(struct mt76x02_dev *dev,
 	u8 bw, bw_index;
 	int freq, freq1;
 	int ret;
+
+	/* mt76x2: high 5G channels are unstable with VHT80/HT40 */
+	mt76x2_fix_5ghz_chandef(chandef);
 
 	dev->cal.channel_cal_done = false;
 	freq = chandef->chan->center_freq;
