@@ -174,7 +174,7 @@ void mt76x2_phy_set_txpower(struct mt76x02_dev *dev)
 	mt76x02_add_rate_power_offset(&t, -base_power);
 	dev->target_power = txp.target_power;
 	dev->target_power_delta[0] = txp_0 - txp.chain[0].target_power;
-	dev->target_power_delta[1] = txp_1 - txp.chain[0].target_power;
+	dev->target_power_delta[1] = txp_1 - txp.chain[1].target_power;
 	dev->rate_power = t;
 
 	mt76x02_phy_set_txpower(dev, txp_0, txp_1);
