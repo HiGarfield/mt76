@@ -42,9 +42,6 @@ mt76x2_set_channel(struct mt76x02_dev *dev, struct cfg80211_chan_def *chandef)
 	mutex_lock(&dev->mt76.mutex);
 	set_bit(MT76_RESET, &dev->mphy.state);
 
-	/* mt76x2: high 5G channels are unstable with VHT80/HT40 */
-	mt76x2_fix_5ghz_chandef(chandef);
-
 	mt76_set_channel(&dev->mphy);
 
 	mt76x2_mac_stop(dev, true);
