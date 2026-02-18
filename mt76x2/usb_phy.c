@@ -8,21 +8,6 @@
 #include "../mt76x02_phy.h"
 
 static void
-mt76x2u_fix_5ghz_chandef(struct cfg80211_chan_def *chandef)
-{
-	struct ieee80211_channel *chan = chandef->chan;
-	u8 channel = chan->hw_value;
-
-	if (chan->band != NL80211_BAND_5GHZ)
-		return;
-
-	if (channel == 165)
-		cfg80211_chandef_create(chandef, chan, NL80211_CHAN_HT20);
-	else if (channel == 161 && chandef->width == NL80211_CHAN_WIDTH_80)
-		cfg80211_chandef_create(chandef, chan, NL80211_CHAN_HT40MINUS);
-}
-
-static void
 mt76x2u_phy_channel_calibrate(struct mt76x02_dev *dev, bool mac_stopped)
 {
 	struct ieee80211_channel *chan = dev->mphy.chandef.chan;
@@ -103,9 +88,6 @@ int mt76x2u_phy_set_channel(struct mt76x02_dev *dev,
 	int ch_group_index, freq, freq1, ret;
 
 	dev->cal.channel_cal_done = false;
-
-	/* mt76x2: high 5G channels are unstable with VHT80/HT40 */
-	mt76x2u_fix_5ghz_chandef(chandef);
 
 	freq = chandef->chan->center_freq;
 	freq1 = chandef->center_freq1;
