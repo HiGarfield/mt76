@@ -9,6 +9,21 @@
 #include "mcu.h"
 #include "../mt76x02_phy.h"
 
+void mt76x2_fix_5ghz_chandef(struct cfg80211_chan_def *chandef)
+{
+	struct ieee80211_channel *chan = chandef->chan;
+	u8 channel = chan->hw_value;
+
+	if (chan->band != NL80211_BAND_5GHZ)
+		return;
+
+	if (channel == 165)
+		cfg80211_chandef_create(chandef, chan, NL80211_CHAN_HT20);
+	else if (channel == 161 && chandef->width == NL80211_CHAN_WIDTH_80)
+		cfg80211_chandef_create(chandef, chan, NL80211_CHAN_HT40MINUS);
+}
+EXPORT_SYMBOL_GPL(mt76x2_fix_5ghz_chandef);
+
 static void
 mt76x2_adjust_high_lna_gain(struct mt76x02_dev *dev, int reg, s8 offset)
 {
