@@ -161,7 +161,11 @@ int mt76x2u_phy_set_channel(struct mt76x02_dev *dev,
 	mt76_wr(dev, MT_BBP(AGC, 61), 0xff64a4e2);
 	mt76_wr(dev, MT_BBP(AGC, 7), 0x08081010);
 	mt76_wr(dev, MT_BBP(AGC, 11), 0x00000404);
-	mt76_wr(dev, MT_BBP(AGC, 2), 0x00007070);
+	/* Adjust AGC 2 for high-band 5GHz channels (157-165) to improve stability */
+	if (chan->band == NL80211_BAND_5GHZ && chan->hw_value >= 157)
+		mt76_wr(dev, MT_BBP(AGC, 2), 0x00006868);
+	else
+		mt76_wr(dev, MT_BBP(AGC, 2), 0x00007070);
 	mt76_wr(dev, MT_TXOP_CTRL_CFG, 0X04101b3f);
 
 	mt76_set(dev, MT_BBP(TXO, 4), BIT(25));
