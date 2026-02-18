@@ -126,7 +126,7 @@ mt76x2_fix_5ghz_chandef(struct cfg80211_chan_def *chandef)
 	if (channel == 165)
 		cfg80211_chandef_create(chandef, chan, NL80211_CHAN_HT20);
 	else if (channel == 161 && chandef->width == NL80211_CHAN_WIDTH_80)
-		cfg80211_chandef_create(chandef, chan, NL80211_CHAN_HT40PLUS);
+		cfg80211_chandef_create(chandef, chan, NL80211_CHAN_HT40MINUS);
 }
 
 int mt76x2_phy_set_channel(struct mt76x02_dev *dev,
