@@ -321,6 +321,8 @@ void mt76x2_phy_update_channel_gain(struct mt76x02_dev *dev)
 		agc_35 = agc_37 = 0x08080808;
 	else if (dev->mphy.chandef.width == NL80211_CHAN_WIDTH_80)
 		agc_35 = 0x10101014;
+	else if (dev->mphy.chandef.chan->hw_value >= 157)
+		agc_35 = 0x0f0f0f14;
 	else
 		agc_35 = 0x11111116;
 
