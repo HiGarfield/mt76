@@ -68,10 +68,10 @@ s8 mt76x02_tx_get_max_txpwr_adj(struct mt76x02_dev *dev,
 
 			nss = ieee80211_rate_get_vht_nss(rate);
 			idx = ((nss - 1) << 3) + mcs;
-			max_txpwr =dev->rate_power.ht[idx & 0xf];
+			max_txpwr = dev->rate_power.ht[idx & 0xf];
 		}
 	} else if (rate->flags & IEEE80211_TX_RC_MCS) {
-		max_txpwr =dev->rate_power.ht[rate->idx & 0xf];
+		max_txpwr = dev->rate_power.ht[rate->idx & 0xf];
 	} else {
 		enum nl80211_band band = dev->mphy.chandef.chan->band;
 
@@ -86,7 +86,7 @@ s8 mt76x02_tx_get_max_txpwr_adj(struct mt76x02_dev *dev,
 			else
 				max_txpwr = rp->ofdm[r->hw_value & 0x7];
 		} else {
-			max_txpwr =dev->rate_power.ofdm[rate->idx & 0x7];
+			max_txpwr = dev->rate_power.ofdm[rate->idx & 0x7];
 		}
 	}
 
