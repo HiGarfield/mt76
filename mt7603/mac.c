@@ -1042,12 +1042,14 @@ int mt7603_tx_prepare_skb(struct mt76_dev *mdev, void *txwi_ptr,
 			  struct mt76_tx_info *tx_info)
 {
 	struct mt7603_dev *dev = container_of(mdev, struct mt7603_dev, mt76);
-	struct mt7603_sta *msta = container_of(wcid, struct mt7603_sta, wcid);
+	struct mt7603_sta *msta = &dev->global_sta;
 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(tx_info->skb);
 	struct ieee80211_key_conf *key = info->control.hw_key;
 	int pid;
 
-	if (!wcid)
+	if (wcid)
+		msta = container_of(wcid, struct mt7603_sta, wcid);
+	else
 		wcid = &dev->global_sta.wcid;
 
 	if (sta) {
