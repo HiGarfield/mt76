@@ -503,6 +503,17 @@ mt7603_init_txpower(struct mt7603_dev *dev,
 
 	target_power += max_offset;
 
+	if (target_power <= 0) {
+		/* EEPROM power data is invalid, use regulatory limits only */
+		dev->tx_power_limit = 0x7f;
+		for (i = 0; i < sband->n_channels; i++) {
+			chan = &sband->channels[i];
+			chan->max_power = chan->max_reg_power;
+			chan->orig_mpwr = chan->max_reg_power;
+		}
+		return;
+	}
+
 	dev->tx_power_limit = target_power;
 	dev->mphy.txpower_cur = target_power;
 
