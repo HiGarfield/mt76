@@ -47,7 +47,7 @@ int mt76x02_eeprom_copy(struct mt76x02_dev *dev,
 			void *dest, int len)
 {
 	if (field + len > dev->mt76.eeprom.size)
-		return -1;
+		return -EINVAL;
 
 	memcpy(dest, dev->mt76.eeprom.data + field, len);
 	return 0;
