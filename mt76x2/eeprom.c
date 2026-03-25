@@ -169,8 +169,7 @@ mt76x2_eeprom_load(struct mt76x02_dev *dev)
 	} else {
 		/* Use efuse data if chip ID is valid */
 		memcpy(dev->mt76.eeprom.data, efuse, MT7662_EEPROM_SIZE);
-		if (!mt76x2_check_eeprom(dev))
-			found = true;
+		found = !mt76x2_check_eeprom(dev);
 	}
 
 out:
