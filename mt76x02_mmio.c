@@ -461,8 +461,9 @@ static void mt76x02_reset_state(struct mt76x02_dev *dev)
 static bool dma_is_busy(struct mt76x02_dev *dev)
 {
 	u32 dma_status = mt76_rr(dev, MT_WPDMA_GLO_CFG);
-    return dma_status & (MT_WPDMA_GLO_CFG_TX_DMA_EN |
-		MT_WPDMA_GLO_CFG_RX_DMA_EN);
+
+	return dma_status & (MT_WPDMA_GLO_CFG_TX_DMA_EN |
+			     MT_WPDMA_GLO_CFG_RX_DMA_EN);
 }
 
 static void mt76x02_watchdog_reset(struct mt76x02_dev *dev)
@@ -519,7 +520,7 @@ static void mt76x02_watchdog_reset(struct mt76x02_dev *dev)
 
 	if (restart) {
 		int retry = 5;
-		while (--retry != 0 && dma_is_busy(dev)) {
+		while (retry-- > 0 && dma_is_busy(dev)) {
 			usleep_range(5000, 10000);
 		}
 		mt76_mcu_restart(dev);
