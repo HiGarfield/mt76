@@ -64,7 +64,7 @@ int mt76x02_get_max_rate_power(struct mt76x02_rate_power *r)
 	s8 ret = 0;
 	int i;
 
-	for (i = 0; i < sizeof(r->all); i++)
+	for (i = 0; i < ARRAY_SIZE(r->all); i++)
 		ret = max(ret, r->all[i]);
 
 	return ret;
@@ -75,7 +75,7 @@ void mt76x02_limit_rate_power(struct mt76x02_rate_power *r, int limit)
 {
 	int i;
 
-	for (i = 0; i < sizeof(r->all); i++)
+	for (i = 0; i < ARRAY_SIZE(r->all); i++)
 		if (r->all[i] > limit)
 			r->all[i] = limit;
 }
@@ -85,7 +85,7 @@ void mt76x02_add_rate_power_offset(struct mt76x02_rate_power *r, int offset)
 {
 	int i;
 
-	for (i = 0; i < sizeof(r->all); i++)
+	for (i = 0; i < ARRAY_SIZE(r->all); i++)
 		r->all[i] += offset;
 }
 EXPORT_SYMBOL_GPL(mt76x02_add_rate_power_offset);
