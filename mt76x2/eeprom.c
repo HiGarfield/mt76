@@ -167,9 +167,9 @@ mt76x2_eeprom_load(struct mt76x02_dev *dev)
 	if (found) {
 		mt76x2_apply_cal_free_data(dev, efuse);
 	} else {
-		/* FIXME: check if efuse data is complete */
-		found = true;
+		/* Use efuse data if chip ID is valid */
 		memcpy(dev->mt76.eeprom.data, efuse, MT7662_EEPROM_SIZE);
+		found = !mt76x2_check_eeprom(dev);
 	}
 
 out:
@@ -362,7 +362,10 @@ mt76x2_get_power_info_2g(struct mt76x02_dev *dev,
 
 	t->chain[chain].tssi_slope = data[0];
 	t->chain[chain].tssi_offset = data[1];
-	t->chain[chain].target_power = data[2];
+	if (mt76x02_field_valid(data[2]))
+		t->chain[chain].target_power = data[2];
+	else
+		t->chain[chain].target_power = 0;
 	t->chain[chain].delta =
 		mt76x02_sign_extend_optional(data[delta_idx], 7);
 
@@ -414,7 +417,10 @@ mt76x2_get_power_info_5g(struct mt76x02_dev *dev,
 
 	t->chain[chain].tssi_slope = data[0];
 	t->chain[chain].tssi_offset = data[1];
-	t->chain[chain].target_power = data[2];
+	if (mt76x02_field_valid(data[2]))
+		t->chain[chain].target_power = data[2];
+	else
+		t->chain[chain].target_power = 0;
 	t->chain[chain].delta =
 		mt76x02_sign_extend_optional(data[delta_idx], 7);
 
