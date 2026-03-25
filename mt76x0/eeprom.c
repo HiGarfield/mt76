@@ -292,7 +292,7 @@ static int mt76x0_check_eeprom(struct mt76x02_dev *dev)
 
 static int mt76x0_load_eeprom(struct mt76x02_dev *dev)
 {
-	int found;
+	int found, ret;
 
 	found = mt76_eeprom_init(&dev->mt76, MT76X0_EEPROM_SIZE);
 	if (found < 0)
@@ -305,8 +305,12 @@ static int mt76x0_load_eeprom(struct mt76x02_dev *dev)
 	if (found < 0)
 		return found;
 
-	return mt76x02_get_efuse_data(dev, 0, dev->mt76.eeprom.data,
-				      MT76X0_EEPROM_SIZE, MT_EE_READ);
+	ret = mt76x02_get_efuse_data(dev, 0, dev->mt76.eeprom.data,
+				     MT76X0_EEPROM_SIZE, MT_EE_READ);
+	if (ret)
+		return ret;
+
+	return mt76x0_check_eeprom(dev);
 }
 
 int mt76x0_eeprom_init(struct mt76x02_dev *dev)
