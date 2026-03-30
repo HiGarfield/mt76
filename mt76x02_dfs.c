@@ -94,7 +94,7 @@ static const struct mt76x02_radar_specs jp_w56_radar_specs[] = {
 	RADAR_SPEC(0, 40, 4, 44, 96, 480, 150, 2900, 80100, 40, 0,
 		   0x7fffffff, 0x14c080, 0x12cc),
 	RADAR_SPEC(2, 60, 15, 48, 940, 2080, 32, 19600, 40200, 32, 0,
-		   0x3938700, 0X57bcf00, 0x1289),
+		   0x3938700, 0x57bcf00, 0x1289),
 	/* 40MHz */
 	RADAR_SPEC(0, 8, 2, 7, 106, 150, 5, 2900, 80100, 5, 0,
 		   0x7fffffff, 0x14c080, 0x13dc),
@@ -103,7 +103,7 @@ static const struct mt76x02_radar_specs jp_w56_radar_specs[] = {
 	RADAR_SPEC(0, 40, 4, 44, 96, 480, 150, 2900, 80100, 40, 0,
 		   0x7fffffff, 0x14c080, 0x12cc),
 	RADAR_SPEC(2, 60, 15, 48, 940, 2080, 32, 19600, 40200, 32, 0,
-		   0x3938700, 0X57bcf00, 0x1289),
+		   0x3938700, 0x57bcf00, 0x1289),
 	/* 80MHz */
 	RADAR_SPEC(0, 8, 2, 9, 106, 150, 15, 2900, 80100, 15, 0,
 		   0x7fffffff, 0x14c080, 0x16cc),
@@ -112,7 +112,7 @@ static const struct mt76x02_radar_specs jp_w56_radar_specs[] = {
 	RADAR_SPEC(0, 40, 4, 44, 96, 480, 150, 2900, 80100, 40, 0,
 		   0x7fffffff, 0x14c080, 0x12cc),
 	RADAR_SPEC(2, 60, 15, 48, 940, 2080, 32, 19600, 40200, 32, 0,
-		   0x3938700, 0X57bcf00, 0x1289)
+		   0x3938700, 0x57bcf00, 0x1289)
 };
 
 static const struct mt76x02_radar_specs jp_w53_radar_specs[] = {
