@@ -305,5 +305,10 @@ int mt76x2_phy_start(struct mt76x02_dev *dev)
 	if (ret)
 		return ret;
 
-	return mt76x2_mcu_load_cr(dev, MT_RF_BBP_CR, 0, 0);
+	ret = mt76x2_mcu_load_cr(dev, MT_RF_BBP_CR, 0, 0);
+	if (ret)
+		dev_err(dev->mt76.dev,
+			"Failed to load RF/BBP CR: %d\n", ret);
+
+	return ret;
 }
