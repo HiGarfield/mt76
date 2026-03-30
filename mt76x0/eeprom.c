@@ -104,7 +104,7 @@ static void mt76x0_set_freq_offset(struct mt76x02_dev *dev)
 	if (!mt76x02_field_valid(val))
 		val = 0;
 
-	caldata->freq_offset -= mt76x02_sign_extend(val, 8);
+	caldata->freq_offset += mt76x02_sign_extend(val, 8);
 }
 
 void mt76x0_read_rx_gain(struct mt76x02_dev *dev)
