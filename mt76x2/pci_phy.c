@@ -305,7 +305,5 @@ int mt76x2_phy_start(struct mt76x02_dev *dev)
 	if (ret)
 		return ret;
 
-	mt76x2_mcu_load_cr(dev, MT_RF_BBP_CR, 0, 0);
-
-	return ret;
+	return mt76x2_mcu_load_cr(dev, MT_RF_BBP_CR, 0, 0);
 }
