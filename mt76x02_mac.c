@@ -1156,7 +1156,7 @@ static void mt76x02_edcca_check(struct mt76x02_dev *dev)
 	active = ktime_to_us(ktime_sub(cur_time, dev->ed_time));
 	dev->ed_time = cur_time;
 
-	busy = (val * 100) / active;
+	busy = active ? (val * 100) / active : 0;
 	busy = min_t(u32, busy, 100);
 
 	if (busy > MT_EDCCA_TH) {
