@@ -224,11 +224,11 @@ int mt76x2_phy_set_channel(struct mt76x02_dev *dev,
 
 	dev->cal.init_cal_done = true;
 
-	mt76_wr(dev, MT_BBP(AGC, 61), 0xFF64A4E2);
+	mt76_wr(dev, MT_BBP(AGC, 61), 0xff64a4e2);
 	mt76_wr(dev, MT_BBP(AGC, 7), 0x08081010);
 	mt76_wr(dev, MT_BBP(AGC, 11), 0x00000404);
 	mt76_wr(dev, MT_BBP(AGC, 2), 0x00007070);
-	mt76_wr(dev, MT_TXOP_CTRL_CFG, 0x04101B3F);
+	mt76_wr(dev, MT_TXOP_CTRL_CFG, 0x04101b3f);
 
 	if (scan)
 		return 0;
@@ -265,9 +265,9 @@ mt76x2_phy_temp_compensate(struct mt76x02_dev *dev)
 	dev->cal.temp = temp;
 
 	if (temp > 25)
-		db_diff = (temp - 25) / t.high_slope;
+		db_diff = t.high_slope ? (temp - 25) / t.high_slope : 0;
 	else
-		db_diff = (25 - temp) / t.low_slope;
+		db_diff = t.low_slope ? (25 - temp) / t.low_slope : 0;
 
 	db_diff = min(db_diff, t.upper_bound);
 	db_diff = max(db_diff, t.lower_bound);

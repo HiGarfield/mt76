@@ -220,6 +220,12 @@ static int mt7603_load_firmware(struct mt7603_dev *dev)
 	}
 
 	dl_len = le32_to_cpu(hdr->dl_len) + 4;
+	if (dl_len > fw->size) {
+		dev_err(dev->mt76.dev, "Invalid firmware length\n");
+		ret = -EINVAL;
+		goto out;
+	}
+
 	ret = mt7603_mcu_init_download(dev, MCU_FIRMWARE_ADDRESS, dl_len);
 	if (ret) {
 		dev_err(dev->mt76.dev, "Download request failed\n");

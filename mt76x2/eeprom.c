@@ -334,9 +334,9 @@ void mt76x2_get_rate_power(struct mt76x02_dev *dev, struct mt76x02_rate_power *t
 	t->ht[14] = t->ht[15] = mt76x02_rate_power_val(val >> 8);
 
 	val = mt76x02_eeprom_get(dev, MT_EE_TX_POWER_VHT_MCS8);
-	if (!is_5ghz)
+	if (is_5ghz)
 		val >>= 8;
-	t->vht[0] = t->vht[1] = mt76x02_rate_power_val(val >> 8);
+	t->vht[0] = t->vht[1] = mt76x02_rate_power_val(val);
 }
 EXPORT_SYMBOL_GPL(mt76x2_get_rate_power);
 
