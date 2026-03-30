@@ -40,7 +40,7 @@ static void mt76x0e_stop_hw(struct mt76x02_dev *dev)
 
 	if (!mt76_poll(dev, MT_WPDMA_GLO_CFG, MT_WPDMA_GLO_CFG_RX_DMA_BUSY,
 		       0, 1000))
-		dev_warn(dev->mt76.dev, "TX DMA did not stop\n");
+		dev_warn(dev->mt76.dev, "RX DMA did not stop\n");
 	mt76_clear(dev, MT_WPDMA_GLO_CFG, MT_WPDMA_GLO_CFG_RX_DMA_EN);
 }
 

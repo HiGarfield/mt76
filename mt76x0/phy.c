@@ -1017,12 +1017,15 @@ void mt76x0_phy_set_channel(struct mt76x02_dev *dev,
 
 static void mt76x0_phy_temp_sensor(struct mt76x02_dev *dev)
 {
-	u8 rf_b7_73, rf_b0_66, rf_b0_67;
+	int rf_b7_73, rf_b0_66, rf_b0_67;
 	s8 val;
 
 	rf_b7_73 = mt76x0_rf_rr(dev, MT_RF(7, 73));
 	rf_b0_66 = mt76x0_rf_rr(dev, MT_RF(0, 66));
 	rf_b0_67 = mt76x0_rf_rr(dev, MT_RF(0, 67));
+
+	if (rf_b7_73 < 0 || rf_b0_66 < 0 || rf_b0_67 < 0)
+		return;
 
 	mt76x0_rf_wr(dev, MT_RF(7, 73), 0x02);
 	mt76x0_rf_wr(dev, MT_RF(0, 66), 0x23);

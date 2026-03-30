@@ -296,6 +296,9 @@ mt76x02_mac_process_tx_rate(struct ieee80211_tx_rate *txrate, u16 rate,
 		if (idx >= 8)
 			idx -= 8;
 
+		if (idx >= 4)
+			idx = 0;
+
 		txrate->idx = idx;
 		return 0;
 	case MT_PHY_TYPE_HT_GF:
