@@ -146,7 +146,7 @@ mt76pci_load_firmware(struct mt76x02_dev *dev)
 
 	release_firmware(fw);
 
-	return ret;
+	return 0;
 
 error:
 	dev_err(dev->mt76.dev, "Invalid firmware\n");
