@@ -162,7 +162,7 @@ int mt76x2u_phy_set_channel(struct mt76x02_dev *dev,
 	mt76_wr(dev, MT_BBP(AGC, 7), 0x08081010);
 	mt76_wr(dev, MT_BBP(AGC, 11), 0x00000404);
 	mt76_wr(dev, MT_BBP(AGC, 2), 0x00007070);
-	mt76_wr(dev, MT_TXOP_CTRL_CFG, 0X04101b3f);
+	mt76_wr(dev, MT_TXOP_CTRL_CFG, 0x04101b3f);
 
 	mt76_set(dev, MT_BBP(TXO, 4), BIT(25));
 	mt76_set(dev, MT_BBP(RXO, 13), BIT(8));
