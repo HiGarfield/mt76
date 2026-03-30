@@ -166,7 +166,7 @@ static int mt7603_load_firmware(struct mt7603_dev *dev)
 	const struct firmware *fw;
 	const struct mt7603_fw_trailer *hdr;
 	const char *firmware;
-	int dl_len;
+	u32 dl_len;
 	u32 addr, val;
 	int ret;
 
@@ -186,7 +186,7 @@ static int mt7603_load_firmware(struct mt7603_dev *dev)
 	if (ret)
 		return ret;
 
-	if (!fw || !fw->data || fw->size < sizeof(*hdr)) {
+	if (!fw || !fw->data || fw->size < sizeof(*hdr) + 4) {
 		dev_err(dev->mt76.dev, "Invalid firmware\n");
 		ret = -EINVAL;
 		goto out;
@@ -219,12 +219,13 @@ static int mt7603_load_firmware(struct mt7603_dev *dev)
 		goto out;
 	}
 
-	dl_len = le32_to_cpu(hdr->dl_len) + 4;
-	if (dl_len > fw->size) {
+	dl_len = le32_to_cpu(hdr->dl_len);
+	if (dl_len > fw->size - sizeof(*hdr) - 4) {
 		dev_err(dev->mt76.dev, "Invalid firmware length\n");
 		ret = -EINVAL;
 		goto out;
 	}
+	dl_len += 4;
 
 	ret = mt7603_mcu_init_download(dev, MCU_FIRMWARE_ADDRESS, dl_len);
 	if (ret) {
