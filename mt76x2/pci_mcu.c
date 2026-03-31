@@ -82,7 +82,8 @@ mt76pci_load_firmware(struct mt76x02_dev *dev)
 {
 	const struct firmware *fw;
 	const struct mt76x02_fw_header *hdr;
-	int len, ret;
+	int ret;
+	u32 ilm_len, dlm_len;
 	__le32 *cur;
 	u32 offset, val;
 
@@ -95,11 +96,11 @@ mt76pci_load_firmware(struct mt76x02_dev *dev)
 
 	hdr = (const struct mt76x02_fw_header *)fw->data;
 
-	len = sizeof(*hdr);
-	len += le32_to_cpu(hdr->ilm_len);
-	len += le32_to_cpu(hdr->dlm_len);
+	ilm_len = le32_to_cpu(hdr->ilm_len);
+	dlm_len = le32_to_cpu(hdr->dlm_len);
 
-	if (fw->size != len)
+	if (ilm_len > fw->size - sizeof(*hdr) ||
+	    dlm_len != fw->size - sizeof(*hdr) - ilm_len)
 		goto error;
 
 	val = le16_to_cpu(hdr->fw_ver);
@@ -111,13 +112,11 @@ mt76pci_load_firmware(struct mt76x02_dev *dev)
 	dev_info(dev->mt76.dev, "Build Time: %.16s\n", hdr->build_time);
 
 	cur = (__le32 *)(fw->data + sizeof(*hdr));
-	len = le32_to_cpu(hdr->ilm_len);
 
 	mt76_wr(dev, MT_MCU_PCIE_REMAP_BASE4, MT_MCU_ILM_OFFSET);
-	mt76_wr_copy(dev, MT_MCU_ILM_ADDR, cur, len);
+	mt76_wr_copy(dev, MT_MCU_ILM_ADDR, cur, ilm_len);
 
-	cur += len / sizeof(*cur);
-	len = le32_to_cpu(hdr->dlm_len);
+	cur += ilm_len / sizeof(*cur);
 
 	if (mt76xx_rev(dev) >= MT76XX_REV_E3)
 		offset = MT_MCU_DLM_ADDR_E3;
@@ -125,7 +124,7 @@ mt76pci_load_firmware(struct mt76x02_dev *dev)
 		offset = MT_MCU_DLM_ADDR;
 
 	mt76_wr(dev, MT_MCU_PCIE_REMAP_BASE4, MT_MCU_DLM_OFFSET);
-	mt76_wr_copy(dev, offset, cur, len);
+	mt76_wr_copy(dev, offset, cur, dlm_len);
 
 	mt76_wr(dev, MT_MCU_PCIE_REMAP_BASE4, 0);
 
@@ -192,6 +191,5 @@ int mt76x2_mcu_init(struct mt76x02_dev *dev)
 	if (ret)
 		return ret;
 
-	mt76x02_mcu_function_select(dev, Q_SELECT, 1);
-	return 0;
+	return mt76x02_mcu_function_select(dev, Q_SELECT, 1);
 }
