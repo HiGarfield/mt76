@@ -99,8 +99,8 @@ mt76pci_load_firmware(struct mt76x02_dev *dev)
 	ilm_len = le32_to_cpu(hdr->ilm_len);
 	dlm_len = le32_to_cpu(hdr->dlm_len);
 
-	if ((ilm_len | dlm_len) & 3 ||
-	    ilm_len > INT_MAX || dlm_len > INT_MAX ||
+	if (ilm_len > INT_MAX || dlm_len > INT_MAX ||
+	    (ilm_len | dlm_len) & 3 ||
 	    ilm_len > fw->size - sizeof(*hdr) ||
 	    dlm_len != fw->size - sizeof(*hdr) - ilm_len)
 		goto error;
