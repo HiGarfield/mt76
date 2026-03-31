@@ -162,7 +162,8 @@ static int mt76x2u_mcu_load_firmware(struct mt76x02_dev *dev)
 	ilm_len = le32_to_cpu(hdr->ilm_len);
 	dlm_len = le32_to_cpu(hdr->dlm_len);
 
-	if (ilm_len > fw->size - sizeof(*hdr) ||
+	if (ilm_len > INT_MAX || dlm_len > INT_MAX ||
+	    ilm_len > fw->size - sizeof(*hdr) ||
 	    dlm_len != fw->size - sizeof(*hdr) - ilm_len) {
 		err = -EINVAL;
 		goto out;
