@@ -31,9 +31,13 @@ int mt76x2_mcu_set_channel(struct mt76x02_dev *dev, u8 channel, u8 bw,
 		.bw = bw,
 		.chainmask = cpu_to_le16(dev->chainmask),
 	};
+	int ret;
 
 	/* first set the channel without the extension channel info */
-	mt76_mcu_send_msg(dev, CMD_SWITCH_CHANNEL_OP, &msg, sizeof(msg), true);
+	ret = mt76_mcu_send_msg(dev, CMD_SWITCH_CHANNEL_OP, &msg, sizeof(msg),
+				true);
+	if (ret)
+		return ret;
 
 	usleep_range(5000, 10000);
 

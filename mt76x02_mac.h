@@ -20,7 +20,7 @@ struct mt76x02_tx_status {
 	u16 rate;
 } __packed __aligned(2);
 
-#define MT_VIF_WCID(_n)		(254 - ((_n) & 7))
+#define MT_VIF_WCID(_n)		(254 - ((_n) & 0xf))
 #define MT_MAX_VIFS		8
 
 #define MT_PKTID_RATE		GENMASK(4, 0)
