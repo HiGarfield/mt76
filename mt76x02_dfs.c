@@ -166,7 +166,7 @@ mt76x02_dfs_seq_pool_get(struct mt76x02_dev *dev)
 	struct mt76x02_dfs_sequence *seq;
 
 	if (list_empty(&dfs_pd->seq_pool)) {
-		seq = devm_kzalloc(dev->mt76.dev, sizeof(*seq), GFP_ATOMIC);
+		seq = kzalloc(sizeof(*seq), GFP_ATOMIC);
 	} else {
 		seq = list_first_entry(&dfs_pd->seq_pool,
 				       struct mt76x02_dfs_sequence,
@@ -859,6 +859,24 @@ void mt76x02_dfs_init_detector(struct mt76x02_dev *dev)
 	dfs_pd->last_sw_check = jiffies;
 	tasklet_init(&dfs_pd->dfs_tasklet, mt76x02_dfs_tasklet,
 		     (unsigned long)dev);
+}
+
+void mt76x02_dfs_cleanup(struct mt76x02_dev *dev)
+{
+	struct mt76x02_dfs_pattern_detector *dfs_pd = &dev->dfs_pd;
+	struct mt76x02_dfs_sequence *seq, *tmp;
+
+	tasklet_kill(&dfs_pd->dfs_tasklet);
+
+	list_for_each_entry_safe(seq, tmp, &dfs_pd->sequences, head) {
+		list_del(&seq->head);
+		kfree(seq);
+	}
+
+	list_for_each_entry_safe(seq, tmp, &dfs_pd->seq_pool, head) {
+		list_del(&seq->head);
+		kfree(seq);
+	}
 }
 
 static void

@@ -285,6 +285,7 @@ void mt76x2_cleanup(struct mt76x02_dev *dev)
 	mt76x2_stop_hardware(dev);
 	mt76x02_dma_cleanup(dev);
 	mt76x02_mcu_cleanup(dev);
+	mt76x02_dfs_cleanup(dev);
 }
 
 int mt76x2_register_device(struct mt76x02_dev *dev)

@@ -253,9 +253,6 @@ mt76_check_sband(struct mt76_phy *phy, struct mt76_sband *msband,
 	bool found = false;
 	int i;
 
-	if (!sband)
-		return;
-
 	for (i = 0; i < sband->n_channels; i++) {
 		if (sband->channels[i].flags & IEEE80211_CHAN_DISABLED)
 			continue;
