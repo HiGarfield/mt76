@@ -64,7 +64,7 @@ mt7603_rx_loopback_skb(struct mt7603_dev *dev, struct sk_buff *skb)
 	idx = FIELD_GET(MT_TXD1_WLAN_IDX, val);
 	skb->priority = FIELD_GET(MT_TXD1_TID, val);
 
-	if (idx >= MT7603_WTBL_STA - 1)
+	if (idx >= MT7603_WTBL_STA)
 		goto free;
 
 	wcid = rcu_dereference(dev->mt76.wcid[idx]);
