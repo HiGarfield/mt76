@@ -354,7 +354,7 @@ void mt7603_wtbl_update_cap(struct mt7603_dev *dev, struct ieee80211_sta *sta)
 	val = mt76_rr(dev, addr + 2 * 4);
 	val &= MT_WTBL1_W2_KEY_TYPE | MT_WTBL1_W2_ADMISSION_CONTROL;
 	val |= FIELD_PREP(MT_WTBL1_W2_AMPDU_FACTOR, sta->ht_cap.ampdu_factor) |
-	       FIELD_PREP(MT_WTBL1_W2_MPDU_DENSITY, sta->ht_cap.ampdu_density) |
+	       FIELD_PREP(MT_WTBL1_W2_MPDU_DENSITY, ampdu_density) |
 	       MT_WTBL1_W2_TXS_BAF_REPORT;
 
 	if (sta->ht_cap.cap)
@@ -1603,11 +1603,10 @@ mt7603_watchdog_check(struct mt7603_dev *dev, u8 *counter,
 	}
 
 	if (check) {
-		if (!check(dev) && *counter < MT7603_WATCHDOG_TIMEOUT) {
+		if (!check(dev)) {
 			*counter = 0;
 			return false;
 		}
-
 		(*counter)++;
 	}
 
