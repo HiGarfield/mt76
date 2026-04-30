@@ -866,6 +866,8 @@ void mt76x02_dfs_cleanup(struct mt76x02_dev *dev)
 	struct mt76x02_dfs_pattern_detector *dfs_pd = &dev->dfs_pd;
 	struct mt76x02_dfs_sequence *seq, *tmp;
 
+	mt76x02_irq_disable(dev, MT_INT_GPTIMER);
+	mt76_rmw_field(dev, MT_INT_TIMER_EN, MT_INT_TIMER_EN_GP_TIMER_EN, 0);
 	tasklet_kill(&dfs_pd->dfs_tasklet);
 
 	list_for_each_entry_safe(seq, tmp, &dfs_pd->sequences, head) {
