@@ -493,7 +493,9 @@ mt76x0_phy_bbp_set_bw(struct mt76x02_dev *dev, enum nl80211_chan_width width)
 	case NL80211_CHAN_WIDTH_80P80:
 	case NL80211_CHAN_WIDTH_160:
 	case NL80211_CHAN_WIDTH_5:
-		/* TODO error */
+		dev_warn(dev->mt76.dev,
+			 "Unsupported channel width %d, keeping previous BBP bandwidth\n",
+			 width);
 		return;
 	}
 

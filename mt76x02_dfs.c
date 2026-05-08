@@ -861,6 +861,14 @@ void mt76x02_dfs_init_detector(struct mt76x02_dev *dev)
 		     (unsigned long)dev);
 }
 
+void mt76x02_dfs_cleanup(struct mt76x02_dev *dev)
+{
+	mt76x02_irq_disable(dev, MT_INT_GPTIMER);
+	mt76_rmw_field(dev, MT_INT_TIMER_EN, MT_INT_TIMER_EN_GP_TIMER_EN, 0);
+	tasklet_kill(&dev->dfs_pd.dfs_tasklet);
+}
+EXPORT_SYMBOL_GPL(mt76x02_dfs_cleanup);
+
 static void
 mt76x02_dfs_set_domain(struct mt76x02_dev *dev,
 		       enum nl80211_dfs_regions region)
