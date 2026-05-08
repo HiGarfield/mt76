@@ -369,7 +369,6 @@ static bool mt76x02_tx_hang(struct mt76x02_dev *dev)
 {
 	struct mt76_queue *q;
 	u32 dma_idx, prev_dma_idx;
-	bool tx_stuck = false;
 	int i;
 
 	for (i = 0; i < 4; i++) {
@@ -387,15 +386,8 @@ static bool mt76x02_tx_hang(struct mt76x02_dev *dev)
 		}
 
 		if (++dev->tx_hang_check[i] >= MT_TX_HANG_TH)
-			tx_stuck = true;
+			return true;
 	}
-
-	if (!tx_stuck)
-		return false;
-
-	/* TX-only hang detection */
-	if (time_after(jiffies, dev->last_tx_activity + 5 * HZ))
-		return true;
 
 	return false;
 }
@@ -519,9 +511,8 @@ static void mt76x02_watchdog_reset(struct mt76x02_dev *dev)
 
 	if (restart) {
 		int retry = 5;
-		while (--retry != 0 && dma_is_busy(dev)) {
+		while (retry-- != 0 && dma_is_busy(dev))
 			usleep_range(5000, 10000);
-		}
 		mt76_mcu_restart(dev);
 	}
 
