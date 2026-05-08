@@ -234,11 +234,10 @@ void mt7603_wtbl_set_smps(struct mt7603_dev *dev, struct mt7603_sta *sta,
 		return;
 
 	num_retries = 3;
-	do
-	{
+	do {
 		mt76_rmw_field(dev, addr, MT_WTBL1_W2_SMPS, enabled);
 		successful = mt76_poll(dev, addr, MT_WTBL1_W2_SMPS,
-								enabled, 15000);
+				       enabled, 15000);
 	} while (!successful && --num_retries);
 
 	if (successful)

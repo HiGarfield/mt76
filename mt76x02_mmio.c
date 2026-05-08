@@ -394,9 +394,8 @@ static bool mt76x02_tx_hang(struct mt76x02_dev *dev)
 		return false;
 
 	/* TX-only hang detection */
-	if (time_after(jiffies, dev->last_tx_activity + 5 * HZ)) {
+	if (time_after(jiffies, dev->last_tx_activity + 5 * HZ))
 		return true;
-	}
 
 	return false;
 }
@@ -461,8 +460,9 @@ static void mt76x02_reset_state(struct mt76x02_dev *dev)
 static bool dma_is_busy(struct mt76x02_dev *dev)
 {
 	u32 dma_status = mt76_rr(dev, MT_WPDMA_GLO_CFG);
-    return dma_status & (MT_WPDMA_GLO_CFG_TX_DMA_EN |
-		MT_WPDMA_GLO_CFG_RX_DMA_EN);
+
+	return dma_status & (MT_WPDMA_GLO_CFG_TX_DMA_BUSY |
+			     MT_WPDMA_GLO_CFG_RX_DMA_BUSY);
 }
 
 static void mt76x02_watchdog_reset(struct mt76x02_dev *dev)
