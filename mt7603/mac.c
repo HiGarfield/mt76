@@ -237,7 +237,7 @@ void mt7603_wtbl_set_smps(struct mt7603_dev *dev, struct mt7603_sta *sta,
 	do {
 		mt76_rmw_field(dev, addr, MT_WTBL1_W2_SMPS, enabled);
 		successful = mt76_poll(dev, addr, MT_WTBL1_W2_SMPS,
-				       enabled, 15000);
+				       enabled ? MT_WTBL1_W2_SMPS : 0, 15000);
 	} while (!successful && --num_retries);
 
 	if (successful)
@@ -353,7 +353,7 @@ void mt7603_wtbl_update_cap(struct mt7603_dev *dev, struct ieee80211_sta *sta)
 	val = mt76_rr(dev, addr + 2 * 4);
 	val &= MT_WTBL1_W2_KEY_TYPE | MT_WTBL1_W2_ADMISSION_CONTROL;
 	val |= FIELD_PREP(MT_WTBL1_W2_AMPDU_FACTOR, sta->ht_cap.ampdu_factor) |
-	       FIELD_PREP(MT_WTBL1_W2_MPDU_DENSITY, sta->ht_cap.ampdu_density) |
+	       FIELD_PREP(MT_WTBL1_W2_MPDU_DENSITY, ampdu_density) |
 	       MT_WTBL1_W2_TXS_BAF_REPORT;
 
 	if (sta->ht_cap.cap)
