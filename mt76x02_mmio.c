@@ -511,7 +511,7 @@ static void mt76x02_watchdog_reset(struct mt76x02_dev *dev)
 
 	if (restart) {
 		int retry = 5;
-		while (retry-- != 0 && dma_is_busy(dev))
+		while (retry-- && dma_is_busy(dev))
 			usleep_range(5000, 10000);
 		mt76_mcu_restart(dev);
 	}
