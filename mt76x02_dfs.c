@@ -148,6 +148,12 @@ mt76x02_dfs_set_capture_mode_ctrl(struct mt76x02_dev *dev, u8 enable)
 	mt76_wr(dev, MT_BBP(DFS, 36), data);
 }
 
+static void mt76x02_dfs_disable_irq(struct mt76x02_dev *dev)
+{
+	mt76x02_irq_disable(dev, MT_INT_GPTIMER);
+	mt76_rmw_field(dev, MT_INT_TIMER_EN, MT_INT_TIMER_EN_GP_TIMER_EN, 0);
+}
+
 static void mt76x02_dfs_seq_pool_put(struct mt76x02_dev *dev,
 				     struct mt76x02_dfs_sequence *seq)
 {
@@ -842,9 +848,7 @@ void mt76x02_dfs_init_params(struct mt76x02_dev *dev)
 		else
 			mt76_wr(dev, MT_BBP(IBI, 11), 0);
 
-		mt76x02_irq_disable(dev, MT_INT_GPTIMER);
-		mt76_rmw_field(dev, MT_INT_TIMER_EN,
-			       MT_INT_TIMER_EN_GP_TIMER_EN, 0);
+		mt76x02_dfs_disable_irq(dev);
 	}
 }
 EXPORT_SYMBOL_GPL(mt76x02_dfs_init_params);
@@ -863,11 +867,9 @@ void mt76x02_dfs_init_detector(struct mt76x02_dev *dev)
 
 void mt76x02_dfs_cleanup(struct mt76x02_dev *dev)
 {
-	mt76x02_irq_disable(dev, MT_INT_GPTIMER);
-	mt76_rmw_field(dev, MT_INT_TIMER_EN, MT_INT_TIMER_EN_GP_TIMER_EN, 0);
+	mt76x02_dfs_disable_irq(dev);
 	tasklet_kill(&dev->dfs_pd.dfs_tasklet);
-	mt76x02_irq_disable(dev, MT_INT_GPTIMER);
-	mt76_rmw_field(dev, MT_INT_TIMER_EN, MT_INT_TIMER_EN_GP_TIMER_EN, 0);
+	mt76x02_dfs_disable_irq(dev);
 }
 EXPORT_SYMBOL_GPL(mt76x02_dfs_cleanup);
 
