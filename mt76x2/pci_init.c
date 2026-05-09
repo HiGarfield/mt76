@@ -237,7 +237,6 @@ int mt76x2_resume_device(struct mt76x02_dev *dev)
 static int mt76x2_init_hardware(struct mt76x02_dev *dev)
 {
 	bool dma_initialized = false;
-	bool mcu_init_attempted = false;
 	int ret;
 
 	mt76x02_dma_disable(dev);
@@ -261,7 +260,6 @@ static int mt76x2_init_hardware(struct mt76x02_dev *dev)
 
 	mt76x02_mac_start(dev);
 
-	mcu_init_attempted = true;
 	ret = mt76x2_mcu_init(dev);
 	if (ret)
 		goto fail;
@@ -275,10 +273,10 @@ static int mt76x2_init_hardware(struct mt76x02_dev *dev)
 fail:
 	clear_bit(MT76_STATE_INITIALIZED, &dev->mphy.state);
 	mt76x2_mac_stop(dev, false);
-	if (dma_initialized)
+	if (dma_initialized) {
 		mt76x02_dma_cleanup(dev);
-	if (mcu_init_attempted)
 		mt76x02_mcu_cleanup(dev);
+	}
 	return ret;
 }
 

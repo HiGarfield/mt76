@@ -91,7 +91,7 @@ static int mt76x0e_register_device(struct mt76x02_dev *dev)
 {
 	int err;
 	bool mcu_initialized = false, dma_initialized = false;
-	bool dfs_needs_cleanup = false;
+	bool register_attempted = false;
 
 	mt76x0_chip_onoff(dev, true, false);
 	if (!mt76x02_wait_for_mac(&dev->mt76))
@@ -127,8 +127,8 @@ static int mt76x0e_register_device(struct mt76x02_dev *dev)
 	mt76_clear(dev, 0x110, BIT(9));
 	mt76_set(dev, MT_MAX_LEN_CFG, BIT(13));
 
+	register_attempted = true;
 	err = mt76x0_register_device(dev);
-	dfs_needs_cleanup = true;
 	if (err < 0)
 		goto fail;
 
@@ -139,7 +139,7 @@ static int mt76x0e_register_device(struct mt76x02_dev *dev)
 fail:
 	if (mcu_initialized) {
 		mt76x0e_stop_hw(dev);
-		if (dfs_needs_cleanup)
+		if (register_attempted)
 			mt76x02_dfs_cleanup(dev);
 		if (dma_initialized)
 			mt76x02_dma_cleanup(dev);
