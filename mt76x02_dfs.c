@@ -866,6 +866,8 @@ void mt76x02_dfs_cleanup(struct mt76x02_dev *dev)
 	mt76x02_irq_disable(dev, MT_INT_GPTIMER);
 	mt76_rmw_field(dev, MT_INT_TIMER_EN, MT_INT_TIMER_EN_GP_TIMER_EN, 0);
 	tasklet_kill(&dev->dfs_pd.dfs_tasklet);
+	mt76x02_irq_disable(dev, MT_INT_GPTIMER);
+	mt76_rmw_field(dev, MT_INT_TIMER_EN, MT_INT_TIMER_EN_GP_TIMER_EN, 0);
 }
 EXPORT_SYMBOL_GPL(mt76x02_dfs_cleanup);
 
