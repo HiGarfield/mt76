@@ -877,7 +877,6 @@ void mt76x02_dfs_cleanup(struct mt76x02_dev *dev)
 {
 	mt76x02_dfs_disable_irq(dev);
 	tasklet_kill(&dev->dfs_pd.dfs_tasklet);
-	mt76x02_dfs_disable_irq(dev);
 }
 EXPORT_SYMBOL_GPL(mt76x02_dfs_cleanup);
 
