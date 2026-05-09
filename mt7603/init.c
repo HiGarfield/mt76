@@ -300,8 +300,11 @@ mt7603_init_hardware(struct mt7603_dev *dev)
 	}
 
 	ret = mt7603_mcu_init(dev);
-	if (ret)
+	if (ret) {
+		clear_bit(MT76_STATE_INITIALIZED, &dev->mphy.state);
+		mt7603_dma_cleanup(dev);
 		return ret;
+	}
 
 	mt7603_dma_sched_init(dev);
 	mt7603_mcu_set_eeprom(dev);
@@ -589,8 +592,13 @@ int mt7603_register_device(struct mt7603_dev *dev)
 
 	ret = mt76_register_device(&dev->mt76, true, mt7603_rates,
 				   ARRAY_SIZE(mt7603_rates));
-	if (ret)
+	if (ret) {
+		tasklet_kill(&dev->mt76.pre_tbtt_tasklet);
+		clear_bit(MT76_STATE_INITIALIZED, &dev->mphy.state);
+		mt7603_mcu_exit(dev);
+		mt7603_dma_cleanup(dev);
 		return ret;
+	}
 
 	mt7603_init_debugfs(dev);
 	mt7603_init_txpower(dev, &dev->mphy.sband_2g.sband);

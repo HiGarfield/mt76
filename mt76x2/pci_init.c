@@ -256,16 +256,24 @@ static int mt76x2_init_hardware(struct mt76x02_dev *dev)
 	if (ret)
 		return ret;
 
-	set_bit(MT76_STATE_INITIALIZED, &dev->mphy.state);
 	mt76x02_mac_start(dev);
 
 	ret = mt76x2_mcu_init(dev);
 	if (ret)
-		return ret;
+		goto fail;
+
+	set_bit(MT76_STATE_INITIALIZED, &dev->mphy.state);
 
 	mt76x2_mac_stop(dev, false);
 
 	return 0;
+
+fail:
+	clear_bit(MT76_STATE_INITIALIZED, &dev->mphy.state);
+	mt76x2_mac_stop(dev, false);
+	mt76x02_dma_cleanup(dev);
+	mt76x02_mcu_cleanup(dev);
+	return ret;
 }
 
 void mt76x2_stop_hardware(struct mt76x02_dev *dev)
@@ -280,6 +288,7 @@ void mt76x2_stop_hardware(struct mt76x02_dev *dev)
 
 void mt76x2_cleanup(struct mt76x02_dev *dev)
 {
+	clear_bit(MT76_STATE_INITIALIZED, &dev->mphy.state);
 	tasklet_kill(&dev->mt76.pre_tbtt_tasklet);
 	mt76x02_dfs_cleanup(dev);
 	mt76x2_stop_hardware(dev);
@@ -313,6 +322,6 @@ int mt76x2_register_device(struct mt76x02_dev *dev)
 	return 0;
 
 fail:
-	mt76x2_stop_hardware(dev);
+	mt76x2_cleanup(dev);
 	return ret;
 }

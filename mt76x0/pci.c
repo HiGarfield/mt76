@@ -90,6 +90,7 @@ static const struct ieee80211_ops mt76x0e_ops = {
 static int mt76x0e_register_device(struct mt76x02_dev *dev)
 {
 	int err;
+	bool mcu_init = false, dma_init = false, dfs_init = false;
 
 	mt76x0_chip_onoff(dev, true, false);
 	if (!mt76x02_wait_for_mac(&dev->mt76))
@@ -98,15 +99,17 @@ static int mt76x0e_register_device(struct mt76x02_dev *dev)
 	mt76x02_dma_disable(dev);
 	err = mt76x0e_mcu_init(dev);
 	if (err < 0)
-		return err;
+		goto fail;
+	mcu_init = true;
 
 	err = mt76x02_dma_init(dev);
 	if (err < 0)
-		return err;
+		goto fail;
+	dma_init = true;
 
 	err = mt76x0_init_hardware(dev);
 	if (err < 0)
-		return err;
+		goto fail;
 
 	mt76x02e_init_beacon_config(dev);
 
@@ -123,13 +126,29 @@ static int mt76x0e_register_device(struct mt76x02_dev *dev)
 	mt76_clear(dev, 0x110, BIT(9));
 	mt76_set(dev, MT_MAX_LEN_CFG, BIT(13));
 
+	dfs_init = true;
 	err = mt76x0_register_device(dev);
 	if (err < 0)
-		return err;
+		goto fail;
 
 	set_bit(MT76_STATE_INITIALIZED, &dev->mphy.state);
 
 	return 0;
+
+fail:
+	if (mcu_init) {
+		if (dfs_init)
+			mt76x02_dfs_cleanup(dev);
+		mt76x0_chip_onoff(dev, false, false);
+		mt76x0e_stop_hw(dev);
+		if (dma_init)
+			mt76x02_dma_cleanup(dev);
+		mt76x02_mcu_cleanup(dev);
+	} else {
+		mt76x0_chip_onoff(dev, false, false);
+	}
+
+	return err;
 }
 
 static int
