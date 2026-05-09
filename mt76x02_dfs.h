@@ -109,6 +109,7 @@ struct mt76x02_dfs_seq_stats {
 struct mt76x02_dfs_pattern_detector {
 	u8 chirp_pulse_cnt;
 	u32 chirp_pulse_ts;
+	bool shutdown;
 
 	struct mt76x02_dfs_sw_detector_params sw_dpd_params;
 	struct mt76x02_dfs_event_rb event_rb[2];

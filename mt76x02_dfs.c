@@ -150,8 +150,16 @@ mt76x02_dfs_set_capture_mode_ctrl(struct mt76x02_dev *dev, u8 enable)
 
 static void mt76x02_dfs_disable_irq(struct mt76x02_dev *dev)
 {
+	WRITE_ONCE(dev->dfs_pd.shutdown, true);
 	mt76x02_irq_disable(dev, MT_INT_GPTIMER);
 	mt76_rmw_field(dev, MT_INT_TIMER_EN, MT_INT_TIMER_EN_GP_TIMER_EN, 0);
+}
+
+static void mt76x02_dfs_enable_irq(struct mt76x02_dev *dev)
+{
+	WRITE_ONCE(dev->dfs_pd.shutdown, false);
+	mt76x02_irq_enable(dev, MT_INT_GPTIMER);
+	mt76_rmw_field(dev, MT_INT_TIMER_EN, MT_INT_TIMER_EN_GP_TIMER_EN, 1);
 }
 
 static void mt76x02_dfs_seq_pool_put(struct mt76x02_dev *dev,
@@ -673,7 +681,8 @@ static void mt76x02_dfs_tasklet(unsigned long arg)
 	mt76_wr(dev, MT_BBP(DFS, 1), 0xf);
 
 out:
-	mt76x02_irq_enable(dev, MT_INT_GPTIMER);
+	if (!READ_ONCE(dfs_pd->shutdown))
+		mt76x02_irq_enable(dev, MT_INT_GPTIMER);
 }
 
 static void mt76x02_dfs_init_sw_detector(struct mt76x02_dev *dev)
@@ -834,9 +843,7 @@ void mt76x02_dfs_init_params(struct mt76x02_dev *dev)
 		/* enable debug mode */
 		mt76x02_dfs_set_capture_mode_ctrl(dev, true);
 
-		mt76x02_irq_enable(dev, MT_INT_GPTIMER);
-		mt76_rmw_field(dev, MT_INT_TIMER_EN,
-			       MT_INT_TIMER_EN_GP_TIMER_EN, 1);
+		mt76x02_dfs_enable_irq(dev);
 	} else {
 		/* disable hw detector */
 		mt76_wr(dev, MT_BBP(DFS, 0), 0);
@@ -861,6 +868,7 @@ void mt76x02_dfs_init_detector(struct mt76x02_dev *dev)
 	INIT_LIST_HEAD(&dfs_pd->seq_pool);
 	dev->mt76.region = NL80211_DFS_UNSET;
 	dfs_pd->last_sw_check = jiffies;
+	dfs_pd->shutdown = false;
 	tasklet_init(&dfs_pd->dfs_tasklet, mt76x02_dfs_tasklet,
 		     (unsigned long)dev);
 }
