@@ -67,8 +67,12 @@ mt7603_update_beacon_iter(void *priv, u8 *mac, struct ieee80211_vif *vif)
 
 	mt76_tx_queue_skb(dev, MT_TXQ_BEACON, skb, &mvif->sta.wcid, NULL);
 
+	spin_unlock_bh(&dev->ps_lock);
+	return;
+
 out:
 	spin_unlock_bh(&dev->ps_lock);
+	dev_kfree_skb(skb);
 }
 
 static void

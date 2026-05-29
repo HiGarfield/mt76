@@ -20,6 +20,11 @@ mt76_alloc_txwi(struct mt76_dev *dev)
 
 	addr = dma_map_single(dev->dev, txwi, dev->drv->txwi_size,
 			      DMA_TO_DEVICE);
+	if (unlikely(dma_mapping_error(dev->dev, addr))) {
+		devm_kfree(dev->dev, txwi);
+		return NULL;
+	}
+
 	t = (struct mt76_txwi_cache *)(txwi + dev->drv->txwi_size);
 	t->dma_addr = addr;
 
@@ -99,6 +104,9 @@ mt76_tx_check_agg_ssn(struct ieee80211_sta *sta, struct sk_buff *skb)
 
 	tid = skb->priority & IEEE80211_QOS_CTL_TAG1D_MASK;
 	txq = sta->txq[tid];
+	if (!txq)
+		return;
+
 	mtxq = (struct mt76_txq *)txq->drv_priv;
 	if (!mtxq->aggr)
 		return;
@@ -228,8 +236,8 @@ mt76_tx_status_skb_get(struct mt76_dev *dev, struct mt76_wcid *wcid, int pktid,
 			if (!(cb->flags & MT_TX_CB_DMA_DONE))
 				continue;
 
-			if (!time_is_after_jiffies(cb->jiffies +
-						   MT_TX_STATUS_SKB_TIMEOUT))
+			if (time_is_after_jiffies(cb->jiffies +
+						  MT_TX_STATUS_SKB_TIMEOUT))
 				continue;
 		}
 
