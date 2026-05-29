@@ -55,20 +55,25 @@ mt7603_update_beacon_iter(void *priv, u8 *mac, struct ieee80211_vif *vif)
 		FIELD_PREP(MT_DMA_FQCR0_TARGET_QID, MT_TX_HW_QUEUE_BCN));
 	if (!mt76_poll(dev, MT_DMA_FQCR0, MT_DMA_FQCR0_BUSY, 0, 5000)) {
 		dev->beacon_check = MT7603_WATCHDOG_TIMEOUT;
-		goto out;
+		goto out_free;
 	}
 
 	mt76_wr(dev, MT_DMA_FQCR0, val |
 		FIELD_PREP(MT_DMA_FQCR0_TARGET_QID, MT_TX_HW_QUEUE_BMC));
 	if (!mt76_poll(dev, MT_DMA_FQCR0, MT_DMA_FQCR0_BUSY, 0, 5000)) {
 		dev->beacon_check = MT7603_WATCHDOG_TIMEOUT;
-		goto out;
+		goto out_free;
 	}
 
 	mt76_tx_queue_skb(dev, MT_TXQ_BEACON, skb, &mvif->sta.wcid, NULL);
 
 out:
 	spin_unlock_bh(&dev->ps_lock);
+	return;
+
+out_free:
+	spin_unlock_bh(&dev->ps_lock);
+	dev_kfree_skb(skb);
 }
 
 static void

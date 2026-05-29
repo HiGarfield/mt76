@@ -199,7 +199,7 @@ mt76_dma_tx_cleanup(struct mt76_dev *dev, enum mt76_txq_id qid, bool flush)
 
 	/* ext PHY */
 	for (i = 0; i < 4; i++) {
-		if (!n_swq_queued[i])
+		if (!n_swq_queued[4 + i])
 			continue;
 
 		dev->q_tx[__MT_TXQ_MAX + i].swq_queued -= n_swq_queued[4 + i];
