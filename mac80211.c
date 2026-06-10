@@ -811,7 +811,7 @@ mt76_check_ccmp_pn(struct sk_buff *skb)
 		 */
 		hdr = mt76_skb_get_hdr(skb);
 		if (ieee80211_is_frag(hdr) &&
-		    !ieee80211_is_first_frag(hdr->frame_control))
+		    !ieee80211_is_first_frag(hdr->seq_ctrl))
 			return 0;
 	}
 
