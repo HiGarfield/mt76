@@ -1237,7 +1237,7 @@ EXPORT_SYMBOL_GPL(mt76x02_mac_cc_reset);
 
 void mt76x02_mac_set_bssid(struct mt76x02_dev *dev, u8 idx, const u8 *addr)
 {
-	idx &= 7;
+	idx &= 0xf;
 	mt76_wr(dev, MT_MAC_APC_BSSID_L(idx), get_unaligned_le32(addr));
 	mt76_rmw_field(dev, MT_MAC_APC_BSSID_H(idx), MT_MAC_APC_BSSID_H_ADDR,
 		       get_unaligned_le16(addr + 4));
