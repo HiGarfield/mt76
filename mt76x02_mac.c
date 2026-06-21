@@ -759,6 +759,8 @@ void mt76x02_mac_setaddr(struct mt76x02_dev *dev, const u8 *addr)
 
 	for (i = 0; i < 16; i++)
 		mt76x02_mac_set_bssid(dev, i, null_addr);
+
+	mt76_set(dev, MT_MAC_APC_BSSID_H(0), MT_MAC_APC_BSSID0_H_EN);
 }
 EXPORT_SYMBOL_GPL(mt76x02_mac_setaddr);
 
