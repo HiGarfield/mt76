@@ -187,6 +187,11 @@ mt7615_mcu_parse_response(struct mt7615_dev *dev, int cmd,
 	struct mt7615_mcu_rxd *rxd = (struct mt7615_mcu_rxd *)skb->data;
 	int ret = 0;
 
+	if (skb->len < sizeof(*rxd)) {
+		ret = -EMSGSIZE;
+		goto out;
+	}
+
 	if (seq != rxd->seq) {
 		ret = -EAGAIN;
 		goto out;
@@ -198,12 +203,20 @@ mt7615_mcu_parse_response(struct mt7615_dev *dev, int cmd,
 		ret = *skb->data;
 		break;
 	case MCU_EXT_CMD_GET_TEMP:
+		if (skb->len < sizeof(*rxd) + (is_mt7663(&dev->mt76) ? 8 : 4)) {
+			ret = -EMSGSIZE;
+			goto out;
+		}
 		skb_pull(skb, sizeof(*rxd));
 		if (is_mt7663(&dev->mt76))
 			skb_pull(skb, 4);
 		ret = le32_to_cpu(*(__le32 *)skb->data);
 		break;
 	case MCU_EXT_CMD_RF_REG_ACCESS | MCU_QUERY_PREFIX:
+		if (skb->len < sizeof(*rxd) + 8 + sizeof(__le32)) {
+			ret = -EMSGSIZE;
+			goto out;
+		}
 		skb_pull(skb, sizeof(*rxd));
 		ret = le32_to_cpu(*(__le32 *)&skb->data[8]);
 		break;
@@ -215,6 +228,10 @@ mt7615_mcu_parse_response(struct mt7615_dev *dev, int cmd,
 	case MCU_UNI_CMD_SUSPEND: {
 		struct mt7615_mcu_uni_event *event;
 
+		if (skb->len < sizeof(*rxd) + sizeof(*event)) {
+			ret = -EMSGSIZE;
+			goto out;
+		}
 		skb_pull(skb, sizeof(*rxd));
 		event = (struct mt7615_mcu_uni_event *)skb->data;
 		ret = le32_to_cpu(event->status);
@@ -223,6 +240,10 @@ mt7615_mcu_parse_response(struct mt7615_dev *dev, int cmd,
 	case MCU_CMD_REG_READ: {
 		struct mt7615_mcu_reg_event *event;
 
+		if (skb->len < sizeof(*rxd) + sizeof(*event)) {
+			ret = -EMSGSIZE;
+			goto out;
+		}
 		skb_pull(skb, sizeof(*rxd));
 		event = (struct mt7615_mcu_reg_event *)skb->data;
 		ret = (int)le32_to_cpu(event->val);
