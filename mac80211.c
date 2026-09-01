@@ -720,7 +720,12 @@ mt76_rx_signal(struct mt76_rx_status *status)
 	int signal = -128;
 	u8 chains;
 
-	for (chains = status->chains; chains; chains >>= 1, chain_signal++) {
+	/* status->chains is a bitmask of antennas, clamped to the number of
+	 * entries chain_signal[] can actually hold.
+	 */
+	chains = status->chains & (BIT(IEEE80211_MAX_CHAINS) - 1);
+
+	for (; chains; chains >>= 1, chain_signal++) {
 		int cur, diff;
 
 		cur = *chain_signal;
