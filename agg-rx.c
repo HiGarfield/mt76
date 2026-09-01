@@ -2,6 +2,7 @@
 /*
  * Copyright (C) 2018 Felix Fietkau <nbd@nbd.name>
  */
+#include <linux/overflow.h>
 #include "mt76.h"
 
 static unsigned long mt76_aggr_tid_to_timeo(u8 tidno)
