@@ -814,7 +814,15 @@ int mt76x02_mac_process_rx(struct mt76x02_dev *dev, struct sk_buff *skb,
 	pn_len = FIELD_GET(MT_RXINFO_PN_LEN, rxinfo);
 	if (pn_len) {
 		int offset = ieee80211_get_hdrlen_from_skb(skb) + pad_len;
-		u8 *data = skb->data + offset;
+		u8 *data;
+
+		/* The PN is read as a fixed 8 bytes below, make sure the
+		 * frame is actually long enough before touching it.
+		 */
+		if (unlikely(skb->len < offset + 8))
+			return -EINVAL;
+
+		data = skb->data + offset;
 
 		status->iv[0] = data[7];
 		status->iv[1] = data[6];
