@@ -705,7 +705,7 @@ enum mt76_phy_type {
 #define mt76_clear(dev, offset, val)	mt76_rmw(dev, offset, val, 0)
 
 #define mt76_get_field(_dev, _reg, _field)		\
-	FIELD_GET(_field, mt76_rr(dev, _reg))
+	FIELD_GET(_field, mt76_rr(_dev, _reg))
 
 #define mt76_rmw_field(_dev, _reg, _field, _val)	\
 	mt76_rmw(_dev, _reg, _field, FIELD_PREP(_field, _val))
