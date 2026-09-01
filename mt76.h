@@ -718,7 +718,7 @@ enum mt76_phy_type {
 static inline struct ieee80211_hw *
 mt76_wcid_hw(struct mt76_dev *dev, u16 wcid)
 {
-	if (wcid <= MT76_N_WCIDS &&
+	if (wcid < MT76_N_WCIDS &&
 	    mt76_wcid_mask_test(dev->wcid_phy_mask, wcid))
 		return dev->phy2->hw;
 
