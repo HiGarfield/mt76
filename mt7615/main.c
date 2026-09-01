@@ -897,7 +897,7 @@ mt7615_get_tsf(struct ieee80211_hw *hw, struct ieee80211_vif *vif)
 		u64 t64;
 		u32 t32[2];
 	} tsf;
-	u16 idx = mvif->mt76.omac_idx;
+	u16 idx = mvif->omac_idx;
 	u32 reg;
 
 	idx = idx > HW_BSSID_MAX ? HW_BSSID_0 : idx;
@@ -924,7 +924,7 @@ mt7615_set_tsf(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 		u64 t64;
 		u32 t32[2];
 	} tsf = { .t64 = timestamp, };
-	u16 idx = mvif->mt76.omac_idx;
+	u16 idx = mvif->omac_idx;
 	u32 reg;
 
 	idx = idx > HW_BSSID_MAX ? HW_BSSID_0 : idx;
@@ -1144,8 +1144,7 @@ out:
 	return err;
 }
 
-static int mt7615_cancel_remain_on_channel(struct ieee80211_hw *hw,
-					   struct ieee80211_vif *vif)
+static int mt7615_cancel_remain_on_channel(struct ieee80211_hw *hw)
 {
 	struct mt7615_phy *phy = mt7615_hw_phy(hw);
 
@@ -1156,7 +1155,8 @@ static int mt7615_cancel_remain_on_channel(struct ieee80211_hw *hw,
 	cancel_work_sync(&phy->roc_work);
 
 	mt7615_mutex_acquire(phy->dev);
-	mt7615_mcu_set_roc(phy, vif, NULL, 0);
+	ieee80211_iterate_active_interfaces(hw, IEEE80211_IFACE_ITER_RESUME_ALL,
+					    mt7615_roc_iter, phy);
 	mt7615_mutex_release(phy->dev);
 
 	return 0;
