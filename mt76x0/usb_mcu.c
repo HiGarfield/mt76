@@ -107,11 +107,12 @@ static int mt76x0u_load_firmware(struct mt76x02_dev *dev)
 	if (le32_to_cpu(hdr->ilm_len) <= MT_MCU_IVB_SIZE)
 		goto err_inv_fw;
 
-	len = sizeof(*hdr);
-	len += le32_to_cpu(hdr->ilm_len);
-	len += le32_to_cpu(hdr->dlm_len);
-
-	if (fw->size != len)
+	/* Compare in size_t: ilm_len/dlm_len are u32 taken from the
+	 * firmware header, so summing them into an int can overflow and
+	 * wrap around to a value that happens to match fw->size.
+	 */
+	if (fw->size != sizeof(*hdr) + le32_to_cpu(hdr->ilm_len) +
+			 le32_to_cpu(hdr->dlm_len))
 		goto err_inv_fw;
 
 	val = le16_to_cpu(hdr->fw_ver);
