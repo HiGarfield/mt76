@@ -475,7 +475,7 @@ int mt76_testmode_dump(struct ieee80211_hw *hw, struct sk_buff *msg,
 	    (mt76_testmode_param_present(td, MT76_TM_ATTR_TX_POWER_CONTROL) &&
 	     nla_put_u8(msg, MT76_TM_ATTR_TX_POWER_CONTROL, td->tx_power_control)) ||
 	    (mt76_testmode_param_present(td, MT76_TM_ATTR_FREQ_OFFSET) &&
-	     nla_put_u8(msg, MT76_TM_ATTR_FREQ_OFFSET, td->freq_offset)))
+	     nla_put_u32(msg, MT76_TM_ATTR_FREQ_OFFSET, td->freq_offset)))
 		goto out;
 
 	if (mt76_testmode_param_present(td, MT76_TM_ATTR_TX_POWER)) {
