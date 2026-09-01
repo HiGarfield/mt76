@@ -298,8 +298,8 @@ int mt76_testmode_cmd(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 	if (!dev->test_ops)
 		return -EOPNOTSUPP;
 
-	err = nla_parse_deprecated(tb, MT76_TM_ATTR_MAX, data, len,
-				   mt76_tm_policy, NULL);
+	err = nla_parse(tb, MT76_TM_ATTR_MAX, data, len,
+			mt76_tm_policy, NULL);
 	if (err)
 		return err;
 
@@ -432,8 +432,8 @@ int mt76_testmode_dump(struct ieee80211_hw *hw, struct sk_buff *msg,
 		return -ENOENT;
 
 	if (data) {
-		err = nla_parse_deprecated(tb, MT76_TM_ATTR_MAX, data, len,
-					   mt76_tm_policy, NULL);
+		err = nla_parse(tb, MT76_TM_ATTR_MAX, data, len,
+				mt76_tm_policy, NULL);
 		if (err)
 			return err;
 	}
