@@ -428,7 +428,7 @@ int mt7615_register_ext_phy(struct mt7615_dev *dev)
 	skb_queue_head_init(&phy->scan_event_list);
 
 	INIT_WORK(&phy->roc_work, mt7615_roc_work);
-	timer_setup(&phy->roc_timer, mt7615_roc_timer, 0);
+	setup_timer(&phy->roc_timer, mt7615_roc_timer, (unsigned long)phy);
 	init_waitqueue_head(&phy->roc_wait);
 
 	mt7615_mac_set_scs(phy, true);
@@ -490,7 +490,8 @@ void mt7615_init_device(struct mt7615_dev *dev)
 
 	INIT_WORK(&dev->reset_work, mt7615_mac_reset_work);
 	INIT_WORK(&dev->phy.roc_work, mt7615_roc_work);
-	timer_setup(&dev->phy.roc_timer, mt7615_roc_timer, 0);
+	setup_timer(&dev->phy.roc_timer, mt7615_roc_timer,
+		    (unsigned long)&dev->phy);
 
 	mt7615_init_wiphy(hw);
 	dev->pm.idle_timeout = MT7615_PM_TIMEOUT;

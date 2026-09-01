@@ -72,7 +72,7 @@ mt76_testmode_tx_init(struct mt76_dev *dev)
 
 	dev_kfree_skb(td->tx_skb);
 	td->tx_skb = skb;
-	hdr = __skb_put_zero(skb, td->tx_msdu_len);
+	hdr = skb_put_zero(skb, td->tx_msdu_len);
 	hdr->frame_control = cpu_to_le16(fc);
 	memcpy(hdr->addr1, dev->macaddr, sizeof(dev->macaddr));
 	memcpy(hdr->addr2, dev->macaddr, sizeof(dev->macaddr));
@@ -404,10 +404,8 @@ mt76_testmode_dump_stats(struct mt76_dev *dev, struct sk_buff *msg)
 	if (nla_put_u32(msg, MT76_TM_STATS_ATTR_TX_PENDING, td->tx_pending) ||
 	    nla_put_u32(msg, MT76_TM_STATS_ATTR_TX_QUEUED, td->tx_queued) ||
 	    nla_put_u32(msg, MT76_TM_STATS_ATTR_TX_DONE, td->tx_done) ||
-	    nla_put_u64_64bit(msg, MT76_TM_STATS_ATTR_RX_PACKETS, rx_packets,
-			      MT76_TM_STATS_ATTR_PAD) ||
-	    nla_put_u64_64bit(msg, MT76_TM_STATS_ATTR_RX_FCS_ERROR, rx_fcs_error,
-			      MT76_TM_STATS_ATTR_PAD))
+	    nla_put_u64(msg, MT76_TM_STATS_ATTR_RX_PACKETS, rx_packets) ||
+	    nla_put_u64(msg, MT76_TM_STATS_ATTR_RX_FCS_ERROR, rx_fcs_error))
 		return -EMSGSIZE;
 
 	if (dev->test_ops->dump_stats)

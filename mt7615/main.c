@@ -1010,9 +1010,9 @@ void mt7615_roc_work(struct work_struct *work)
 	ieee80211_remain_on_channel_expired(phy->mt76->hw);
 }
 
-void mt7615_roc_timer(struct timer_list *timer)
+void mt7615_roc_timer(unsigned long data)
 {
-	struct mt7615_phy *phy = from_timer(phy, timer, roc_timer);
+	struct mt7615_phy *phy = (struct mt7615_phy *)data;
 
 	ieee80211_queue_work(phy->mt76->hw, &phy->roc_work);
 }
