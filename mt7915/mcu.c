@@ -8,6 +8,49 @@
 #include "mac.h"
 #include "eeprom.h"
 
+/*
+ * Kernel/backports compatibility shims.
+ *
+ * The following helpers are not provided by the 4.4-based kernel plus
+ * backports 4.19.237 mac80211/cfg80211; implement local equivalents with
+ * the same semantics as the upstream (newer kernel) versions:
+ *  - ieee80211_get_he_iftype_cap():     not exported by backports 4.19
+ *  - WLAN_EXT_CAPA10_OBSS_NARROW_BW_RU_TOLERANCE_SUPPORT: kernel >= 5.4
+ *  - cfg80211_find_elem()/ieee80211_bss_get_elem(): not in backports 4.19
+ */
+#ifndef WLAN_EXT_CAPA10_OBSS_NARROW_BW_RU_TOLERANCE_SUPPORT
+#define WLAN_EXT_CAPA10_OBSS_NARROW_BW_RU_TOLERANCE_SUPPORT	BIT(7)
+#endif
+
+static inline const struct ieee80211_sta_he_cap *
+ieee80211_get_he_iftype_cap(const struct ieee80211_supported_band *sband,
+			    enum nl80211_iftype iftype)
+{
+	const struct ieee80211_sband_iftype_data *data;
+
+	data = ieee80211_get_sband_iftype_data(sband, iftype);
+	if (data)
+		return &data->he_cap;
+
+	return NULL;
+}
+
+static struct element *
+mt7915_find_elem(u8 elem_id, const u8 *ies, unsigned int len)
+{
+	const struct element *elem;
+
+	for (elem = (const struct element *)ies;
+	     (const u8 *)elem + sizeof(*elem) <= ies + len;
+	     elem = (const struct element *)((const u8 *)elem +
+					     sizeof(*elem) + elem->datalen)) {
+		if (elem->id == elem_id)
+			return (struct element *)elem;
+	}
+
+	return NULL;
+}
+
 struct mt7915_patch_hdr {
 	char build_date[16];
 	char platform[4];
@@ -827,8 +870,18 @@ static void mt7915_check_he_obss_narrow_bw_ru_iter(struct wiphy *wiphy,
 {
 	struct mt7915_he_obss_narrow_bw_ru_data *data = _data;
 	const struct element *elem;
+	const struct cfg80211_bss_ies *ies;
 
-	elem = ieee80211_bss_get_elem(bss, WLAN_EID_EXT_CAPABILITY);
+	rcu_read_lock();
+	ies = rcu_dereference(bss->ies);
+	if (!ies) {
+		rcu_read_unlock();
+		data->tolerated = false;
+		return;
+	}
+
+	elem = mt7915_find_elem(WLAN_EID_EXT_CAPABILITY, ies->data, ies->len);
+	rcu_read_unlock();
 
 	if (!elem || elem->datalen < 10 ||
 	    !(elem->data[10] &
@@ -846,9 +899,17 @@ static bool mt7915_check_he_obss_narrow_bw_ru(struct ieee80211_hw *hw,
 	if (!(vif->bss_conf.chandef.chan->flags & IEEE80211_CHAN_RADAR))
 		return false;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 16, 0)
+	/*
+	 * cfg80211_bss_iter() is only available on kernels >= 4.16 and is
+	 * not provided by backports 4.19 either. On older kernels the OBSS
+	 * narrow-BW-RU tolerance check stays disabled, assuming no AP is
+	 * intolerant (conservative default).
+	 */
 	cfg80211_bss_iter(hw->wiphy, &vif->bss_conf.chandef,
 			  mt7915_check_he_obss_narrow_bw_ru_iter,
 			  &iter_data);
+#endif
 
 	/*
 	 * If there is at least one AP on radar channel that cannot
