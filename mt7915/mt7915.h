@@ -9,6 +9,31 @@
 #include "../mt76.h"
 #include "regs.h"
 
+/*
+ * HE capability macros that are missing from the mac80211 headers of
+ * older kernels, including the 4.19 backport this driver is built
+ * against. The values are taken verbatim from
+ * include/linux/ieee80211.h of the kernel that introduced them.
+ * NOMIMAL is the spelling the kernel itself uses.
+ */
+#ifndef IEEE80211_HE_MAC_CAP5_OM_CTRL_UL_MU_DATA_DIS_RX
+#define IEEE80211_HE_MAC_CAP5_OM_CTRL_UL_MU_DATA_DIS_RX		0x10
+#endif
+
+#ifndef IEEE80211_HE_PHY_CAP8_DCM_MAX_RU_484
+#define IEEE80211_HE_PHY_CAP8_DCM_MAX_RU_484			0x40
+#endif
+
+#ifndef IEEE80211_HE_PHY_CAP9_LONGER_THAN_16_SIGB_OFDM_SYM
+#define IEEE80211_HE_PHY_CAP9_LONGER_THAN_16_SIGB_OFDM_SYM	0x01
+#define IEEE80211_HE_PHY_CAP9_NON_TRIGGERED_CQI_FEEDBACK	0x02
+#define IEEE80211_HE_PHY_CAP9_TX_1024_QAM_LESS_THAN_242_TONE_RU	0x04
+#define IEEE80211_HE_PHY_CAP9_RX_1024_QAM_LESS_THAN_242_TONE_RU	0x08
+#define IEEE80211_HE_PHY_CAP9_RX_FULL_BW_SU_USING_MU_WITH_COMP_SIGB	0x10
+#define IEEE80211_HE_PHY_CAP9_RX_FULL_BW_SU_USING_MU_WITH_NON_COMP_SIGB	0x20
+#define IEEE80211_HE_PHY_CAP9_NOMIMAL_PKT_PADDING_16US		0x80
+#endif
+
 #define MT7915_MAX_INTERFACES		4
 #define MT7915_MAX_WMM_SETS		4
 #define MT7915_WTBL_SIZE		288
