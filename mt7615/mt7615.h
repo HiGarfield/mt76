@@ -308,6 +308,7 @@ struct mt7615_dev {
 
 	struct {
 		bool enable;
+		struct mutex mutex;
 
 		spinlock_t txq_lock;
 		struct {
