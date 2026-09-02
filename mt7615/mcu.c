@@ -989,7 +989,7 @@ mt7615_mcu_bss_basic_tlv(struct sk_buff *skb, struct ieee80211_vif *vif,
 		bss->bcn_interval = cpu_to_le16(vif->bss_conf.beacon_int);
 		bss->dtim_period = vif->bss_conf.dtim_period;
 	} else {
-		memcpy(bss->bssid, phy->mt76->macaddr, ETH_ALEN);
+		memcpy(bss->bssid, phy->dev->mt76.macaddr, ETH_ALEN);
 	}
 
 	return 0;
