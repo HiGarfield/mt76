@@ -3,6 +3,7 @@
 
 #include <linux/firmware.h>
 #include <linux/fs.h>
+#include <linux/version.h>
 #include "mt7915.h"
 #include "mcu.h"
 #include "mac.h"
