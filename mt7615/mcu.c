@@ -1915,7 +1915,6 @@ mt7615_mcu_uni_add_beacon_offload(struct mt7615_dev *dev,
 	return __mt76_mcu_send_msg(&dev->mt76, MCU_UNI_CMD_BSS_INFO_UPDATE,
 				   &req, sizeof(req), true);
 }
-}
 
 static int
 mt7615_mcu_uni_tx_ba(struct mt7615_dev *dev,
