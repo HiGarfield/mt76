@@ -51,7 +51,7 @@ mt7615_tm_set_tx_power(struct mt7615_phy *phy)
 	struct mt76_phy *mphy = phy->mt76;
 	int i, ret, n_chains = hweight8(mphy->antenna_mask);
 	struct cfg80211_chan_def *chandef = &mphy->chandef;
-	int freq = chandef->center_freq1, len, target_chains;
+	int freq = chandef->center_freq1, len;
 	u8 *data, *eep = (u8 *)dev->mt76.eeprom.data;
 	enum nl80211_band band = chandef->chan->band;
 	struct sk_buff *skb;
@@ -78,17 +78,13 @@ mt7615_tm_set_tx_power(struct mt7615_phy *phy)
 	skb_put_data(skb, &req_hdr, sizeof(req_hdr));
 	data = skb_put_data(skb, eep + MT_EE_NIC_CONF_0, len);
 
-	target_chains = mt7615_ext_pa_enabled(dev, band) ? 1 : n_chains;
-	for (i = 0; i < target_chains; i++) {
-		int index;
-
+	for (i = 0; i < n_chains; i++) {
 		ret = mt7615_eeprom_get_target_power_index(dev, chandef->chan, i);
 		if (ret < 0) {
 			dev_kfree_skb(skb);
 			return -EINVAL;
 		}
 
-		index = ret - MT_EE_NIC_CONF_0;
 		if (tx_power && tx_power[i])
 			data[ret - MT_EE_NIC_CONF_0] = tx_power[i];
 	}
