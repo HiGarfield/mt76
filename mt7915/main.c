@@ -440,7 +440,11 @@ static void mt7915_bss_info_changed(struct ieee80211_hw *hw,
 
 	if (changed & BSS_CHANGED_ASSOC) {
 		mt7915_mcu_add_bss_info(phy, vif, info->assoc);
+#ifndef MT7915_HAS_NO_HE_OBSS_PD
 		mt7915_mcu_add_obss_spr(dev, vif, info->he_obss_pd.enable);
+#else
+		mt7915_mcu_add_obss_spr(dev, vif, false);
+#endif
 	}
 
 	if (changed & BSS_CHANGED_ERP_SLOT) {
@@ -461,8 +465,10 @@ static void mt7915_bss_info_changed(struct ieee80211_hw *hw,
 	if (changed & (BSS_CHANGED_QOS | BSS_CHANGED_BEACON_ENABLED))
 		mt7915_mcu_set_tx(dev, vif);
 
+#ifndef MT7915_HAS_NO_HE_OBSS_PD
 	if (changed & BSS_CHANGED_HE_OBSS_PD)
 		mt7915_mcu_add_obss_spr(dev, vif, info->he_obss_pd.enable);
+#endif
 
 	if (changed & (BSS_CHANGED_BEACON |
 		       BSS_CHANGED_BEACON_ENABLED))

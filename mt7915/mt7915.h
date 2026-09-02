@@ -34,6 +34,20 @@
 #define IEEE80211_HE_PHY_CAP9_NOMIMAL_PKT_PADDING_16US		0x80
 #endif
 
+#ifndef IEEE80211_AMPDU_TX_START_IMMEDIATE
+#define IEEE80211_AMPDU_TX_START_IMMEDIATE	1
+#endif
+
+/*
+ * OBSS packet detection is a newer mac80211 feature: it brings both a
+ * BSS_CHANGED_* bit and a struct ieee80211_bss_conf member, and the
+ * latter cannot be provided by a define. Mark its absence so the call
+ * sites can be compiled out.
+ */
+#ifndef BSS_CHANGED_HE_OBSS_PD
+#define MT7915_HAS_NO_HE_OBSS_PD
+#endif
+
 #define MT7915_MAX_INTERFACES		4
 #define MT7915_MAX_WMM_SETS		4
 #define MT7915_WTBL_SIZE		288
