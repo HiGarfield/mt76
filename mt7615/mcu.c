@@ -1466,6 +1466,7 @@ mt7615_mcu_wtbl_sta_add(struct mt7615_dev *dev, struct ieee80211_vif *vif,
 		return PTR_ERR(wtbl_hdr);
 	}
 
+	if (enable) {
 		mt7615_mcu_wtbl_generic_tlv(wskb, vif, sta, NULL, wtbl_hdr);
 		if (sta)
 			mt7615_mcu_wtbl_ht_tlv(wskb, sta, NULL, wtbl_hdr);
