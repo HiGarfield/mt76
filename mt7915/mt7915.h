@@ -22,6 +22,9 @@
 
 #ifndef IEEE80211_HE_PHY_CAP8_DCM_MAX_RU_484
 #define IEEE80211_HE_PHY_CAP8_DCM_MAX_RU_484			0x40
+#define IEEE80211_HE_PHY_CAP8_DCM_MAX_RU_996			0x80
+#define IEEE80211_HE_PHY_CAP8_DCM_MAX_RU_2x996			0xc0
+#define IEEE80211_HE_PHY_CAP8_DCM_MAX_RU_MASK			0xc0
 #endif
 
 #ifndef IEEE80211_HE_PHY_CAP9_LONGER_THAN_16_SIGB_OFDM_SYM
@@ -46,6 +49,16 @@
  */
 #ifndef BSS_CHANGED_HE_OBSS_PD
 #define MT7915_HAS_NO_HE_OBSS_PD
+#endif
+
+/*
+ * struct ieee80211_tx_status only gained a ->rate member in newer
+ * kernels (5.2). The 4.19 mac80211 this is built against does not have
+ * it, so the rate cannot be handed over that way.
+ */
+#include <linux/version.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0)
+#define MT7915_HAS_TX_STATUS_RATE
 #endif
 
 #define MT7915_MAX_INTERFACES		4

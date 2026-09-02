@@ -1503,7 +1503,7 @@ mt7915_mcu_sta_he_tlv(struct sk_buff *skb, struct ieee80211_sta *sta)
 	he->t_frame_dur =
 		HE_MAC(CAP1_TF_MAC_PAD_DUR_MASK, elem->mac_cap_info[1]);
 	he->max_ampdu_exp =
-		HE_MAC(CAP3_MAX_AMPDU_LEN_EXP_MASK, elem->mac_cap_info[3]);
+		HE_MAC(CAP3_MAX_A_AMPDU_LEN_EXP_MASK, elem->mac_cap_info[3]);
 
 	he->bw_set =
 		HE_PHY(CAP0_CHANNEL_WIDTH_SET_MASK, elem->phy_cap_info[0]);

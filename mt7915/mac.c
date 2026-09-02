@@ -465,6 +465,7 @@ int mt7915_mac_fill_rx(struct mt7915_dev *dev, struct sk_buff *skb)
 		if (rxd1 & MT_RXD1_NORMAL_GROUP_5) {
 			u8 stbc = FIELD_GET(MT_CRXV_HT_STBC, v2);
 			u8 gi = FIELD_GET(MT_CRXV_HT_SHORT_GI, v2);
+			int i;
 			bool cck = false;
 
 			rxd += 18;
@@ -818,7 +819,9 @@ mt7915_tx_status(struct ieee80211_sta *sta, struct ieee80211_hw *hw,
 		struct mt7915_sta *msta;
 
 		msta = (struct mt7915_sta *)sta->drv_priv;
+#ifdef MT7915_HAS_TX_STATUS_RATE
 		status.rate = &msta->stats.tx_rate;
+#endif
 	}
 
 	/* use status_ext to report HE rate */
