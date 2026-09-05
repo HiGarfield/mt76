@@ -130,6 +130,22 @@ void mt7615_mac_init(struct mt7615_dev *dev)
 }
 EXPORT_SYMBOL_GPL(mt7615_mac_init);
 
+/*
+ * The scheduled scan and offload related limits are set up by
+ * mt7615_init_wiphy() for every PHY.  Without firmware offload support
+ * none of that is actually implemented, so drop it again.
+ */
+static void
+mt7615_disable_offload_caps(struct wiphy *wiphy)
+{
+	wiphy->max_sched_scan_plan_interval = 0;
+	wiphy->max_sched_scan_ie_len = 0;
+	wiphy->max_scan_ie_len = IEEE80211_MAX_DATA_LEN;
+	wiphy->max_sched_scan_ssids = 0;
+	wiphy->max_match_sets = 0;
+	wiphy->max_sched_scan_reqs = 0;
+}
+
 void mt7615_check_offload_capability(struct mt7615_dev *dev)
 {
 	struct ieee80211_hw *hw = mt76_hw(dev);
@@ -154,12 +170,11 @@ void mt7615_check_offload_capability(struct mt7615_dev *dev)
 		dev->ops->remain_on_channel = NULL;
 		dev->ops->cancel_remain_on_channel = NULL;
 
-		wiphy->max_sched_scan_plan_interval = 0;
-		wiphy->max_sched_scan_ie_len = 0;
-		wiphy->max_scan_ie_len = IEEE80211_MAX_DATA_LEN;
-		wiphy->max_sched_scan_ssids = 0;
-		wiphy->max_match_sets = 0;
-		wiphy->max_sched_scan_reqs = 0;
+		/*
+		 * The second PHY is registered later on, its wiphy gets
+		 * the same treatment in mt7615_register_ext_phy().
+		 */
+		mt7615_disable_offload_caps(wiphy);
 	}
 }
 EXPORT_SYMBOL_GPL(mt7615_check_offload_capability);
@@ -422,6 +437,16 @@ int mt7615_register_ext_phy(struct mt7615_dev *dev)
 	phy->chainmask = dev->chainmask & ~dev->phy.chainmask;
 	mphy->antenna_mask = BIT(hweight8(phy->chainmask)) - 1;
 	mt7615_init_wiphy(mphy->hw);
+
+	/*
+	 * mt7615_check_offload_capability() runs before this PHY exists,
+	 * so the limits it set up for the primary PHY have to be dropped
+	 * here as well. Otherwise the second PHY keeps advertising
+	 * scheduled scan support which is not implemented without
+	 * firmware offload.
+	 */
+	if (!mt7615_firmware_offload(dev))
+		mt7615_disable_offload_caps(mphy->hw->wiphy);
 
 	INIT_DELAYED_WORK(&phy->mac_work, mt7615_mac_work);
 	INIT_DELAYED_WORK(&phy->scan_work, mt7615_scan_work);
