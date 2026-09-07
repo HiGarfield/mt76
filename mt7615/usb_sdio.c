@@ -144,6 +144,7 @@ mt7663_usb_sdio_set_key(struct mt7615_dev *dev,
 	struct mt7615_key_desc *key = &wd->key;
 	struct mt7615_sta *sta = wd->sta;
 	enum mt7615_cipher_type cipher;
+	u16 cipher_mask;
 	struct mt76_wcid *wcid;
 	int err;
 
@@ -162,21 +163,25 @@ mt7663_usb_sdio_set_key(struct mt7615_dev *dev,
 
 	wcid = &wd->sta->wcid;
 
-	mt7615_mac_wtbl_update_cipher(dev, wcid, cipher, key->cmd);
-	err = mt7615_mac_wtbl_update_key(dev, wcid, key->key, key->keylen,
-					 cipher, key->cmd);
-	if (err < 0)
-		goto out;
-
-	err = mt7615_mac_wtbl_update_pk(dev, wcid, cipher, key->keyidx,
-					key->cmd);
-	if (err < 0)
-		goto out;
-
+	cipher_mask = wcid->cipher;
 	if (key->cmd == SET_KEY)
-		wcid->cipher |= BIT(cipher);
+		cipher_mask |= BIT(cipher);
 	else
-		wcid->cipher &= ~BIT(cipher);
+		cipher_mask &= ~BIT(cipher);
+
+	mt7615_mac_wtbl_update_cipher(dev, wcid, cipher, cipher_mask,
+				      key->cmd);
+	err = mt7615_mac_wtbl_update_key(dev, wcid, key->key, key->keylen,
+					 cipher, cipher_mask, key->cmd);
+	if (err < 0)
+		goto out;
+
+	err = mt7615_mac_wtbl_update_pk(dev, wcid, cipher, cipher_mask,
+					key->keyidx, key->cmd);
+	if (err < 0)
+		goto out;
+
+	wcid->cipher = cipher_mask;
 out:
 	kfree(key->key);
 

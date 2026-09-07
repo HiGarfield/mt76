@@ -559,15 +559,18 @@ int mt7615_mac_wtbl_set_key(struct mt7615_dev *dev, struct mt76_wcid *wcid,
 int mt7615_mac_wtbl_update_pk(struct mt7615_dev *dev,
 			      struct mt76_wcid *wcid,
 			      enum mt7615_cipher_type cipher,
+			      u16 cipher_mask,
 			      int keyidx, enum set_key_cmd cmd);
 void mt7615_mac_wtbl_update_cipher(struct mt7615_dev *dev,
 				   struct mt76_wcid *wcid,
 				   enum mt7615_cipher_type cipher,
+				   u16 cipher_mask,
 				   enum set_key_cmd cmd);
 int mt7615_mac_wtbl_update_key(struct mt7615_dev *dev,
 			       struct mt76_wcid *wcid,
 			       u8 *key, u8 keylen,
 			       enum mt7615_cipher_type cipher,
+			       u16 cipher_mask,
 			       enum set_key_cmd cmd);
 void mt7615_mac_reset_work(struct work_struct *work);
 u32 mt7615_mac_get_sta_tid_sn(struct mt7615_dev *dev, int wcid, u8 tid);
