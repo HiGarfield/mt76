@@ -174,7 +174,6 @@ void mt7615_unregister_device(struct mt7615_dev *dev)
 	mt76_unregister_device(&dev->mt76);
 	if (mcu_running)
 		mt7615_mcu_exit(dev);
-	mt7615_dma_cleanup(dev);
 
 	spin_lock_bh(&dev->token_lock);
 	idr_for_each_entry(&dev->token, txwi, id) {
@@ -185,6 +184,7 @@ void mt7615_unregister_device(struct mt7615_dev *dev)
 	}
 	spin_unlock_bh(&dev->token_lock);
 	idr_destroy(&dev->token);
+	mt7615_dma_cleanup(dev);
 
 	tasklet_disable(&dev->irq_tasklet);
 
