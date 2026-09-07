@@ -278,6 +278,7 @@ static void
 mt76_phy_init(struct mt76_dev *dev, struct ieee80211_hw *hw)
 {
 	struct wiphy *wiphy = hw->wiphy;
+	struct mt76_phy *phy = hw->priv;
 
 	SET_IEEE80211_DEV(hw, dev->dev);
 	SET_IEEE80211_PERM_ADDR(hw, dev->macaddr);
@@ -292,9 +293,9 @@ mt76_phy_init(struct mt76_dev *dev, struct ieee80211_hw *hw)
 	wiphy_ext_feature_set(wiphy, NL80211_EXT_FEATURE_AIRTIME_FAIRNESS);
 
 	if (!wiphy->available_antennas_tx)
-		wiphy->available_antennas_tx = dev->phy.antenna_mask;
+		wiphy->available_antennas_tx = phy->antenna_mask;
 	if (!wiphy->available_antennas_rx)
-		wiphy->available_antennas_rx = dev->phy.antenna_mask;
+		wiphy->available_antennas_rx = phy->antenna_mask;
 
 	hw->txq_data_size = sizeof(struct mt76_txq);
 	hw->uapsd_max_sp_len = IEEE80211_WMM_IE_STA_QOSINFO_SP_ALL;
