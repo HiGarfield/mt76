@@ -1655,6 +1655,7 @@ mt7615_mcu_uni_add_dev(struct mt7615_dev *dev,
 
 	switch (vif->type) {
 	case NL80211_IFTYPE_MESH_POINT:
+	case NL80211_IFTYPE_MONITOR:
 	case NL80211_IFTYPE_AP:
 		basic_req.basic.conn_type = cpu_to_le32(CONNECTION_INFRA_AP);
 		break;
