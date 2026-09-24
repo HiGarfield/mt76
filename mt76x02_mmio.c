@@ -368,8 +368,7 @@ EXPORT_SYMBOL_GPL(mt76x02_mac_start);
 static bool mt76x02_tx_hang(struct mt76x02_dev *dev)
 {
 	struct mt76_queue *q;
-	u32 dma_idx, prev_dma_idx;
-	bool tx_stuck = false;
+	u32 dma_idx, prev_dma_idx, cpu_idx;
 	int i;
 
 	for (i = 0; i < 4; i++) {
@@ -379,23 +378,25 @@ static bool mt76x02_tx_hang(struct mt76x02_dev *dev)
 
 		prev_dma_idx = dev->mt76.tx_dma_idx[i];
 		dma_idx = readl(&q->regs->dma_idx);
+		cpu_idx = readl(&q->regs->cpu_idx);
 		dev->mt76.tx_dma_idx[i] = dma_idx;
 
-		if (!q->queued || prev_dma_idx != dma_idx) {
+		/* Only a queue the hardware still owes work on can be stuck:
+		 * if dma_idx caught up with cpu_idx everything we published has
+		 * been fetched, and the remaining queued entries are merely
+		 * waiting for their tx status (queue stopped by mac80211,
+		 * station in power save, late/missing TXS, ...). Treating that
+		 * as a hang is what produced the bogus resets.
+		 */
+		if (!q->queued || dma_idx == cpu_idx ||
+		    prev_dma_idx != dma_idx) {
 			dev->tx_hang_check[i] = 0;
 			continue;
 		}
 
 		if (++dev->tx_hang_check[i] >= MT_TX_HANG_TH)
-			tx_stuck = true;
+			return true;
 	}
-
-	if (!tx_stuck)
-		return false;
-
-	/* TX-only hang detection */
-	if (time_after(jiffies, dev->last_tx_activity + 5 * HZ))
-		return true;
 
 	return false;
 }
@@ -502,16 +503,6 @@ static void mt76x02_watchdog_reset(struct mt76x02_dev *dev)
 		   MT_WPDMA_GLO_CFG_TX_DMA_EN | MT_WPDMA_GLO_CFG_RX_DMA_EN);
 	usleep_range(20000, 30000);
 
-	if (dma_is_busy(dev)) {
-		for (i = 0; i < __MT_TXQ_MAX; i++)
-			mt76_queue_tx_cleanup(dev, i, true);
-		mt76_for_each_q_rx(&dev->mt76, i)
-			mt76_queue_rx_reset(dev, i);
-		mt76_clear(dev, MT_WPDMA_GLO_CFG,
-			   MT_WPDMA_GLO_CFG_TX_DMA_EN | MT_WPDMA_GLO_CFG_RX_DMA_EN);
-		usleep_range(10000, 20000);
-	}
-
 	mt76_wr(dev, MT_INT_SOURCE_CSR, 0xffffffff);
 
 	/* let fw reset DMA */
@@ -519,9 +510,11 @@ static void mt76x02_watchdog_reset(struct mt76x02_dev *dev)
 
 	if (restart) {
 		int retry = 5;
-		while (--retry != 0 && dma_is_busy(dev)) {
+
+		/* wait for the DMA to quiesce before restarting the fw */
+		while (--retry != 0 && dma_is_busy(dev))
 			usleep_range(5000, 10000);
-		}
+
 		mt76_mcu_restart(dev);
 	}
 
@@ -567,9 +560,6 @@ static void mt76x02_watchdog_reset(struct mt76x02_dev *dev)
 	}
 	local_bh_enable();
 
-	if (dma_is_busy(dev))
-		restart = true;
-
 	if (restart) {
 		set_bit(MT76_RESTART, &dev->mphy.state);
 		mt76x02_mcu_function_select(dev, Q_SELECT, 1);
@@ -598,6 +588,16 @@ static void mt76x02_check_tx_hang(struct mt76x02_dev *dev)
 	if (test_bit(MT76_RESTART, &dev->mphy.state))
 		return;
 
+	/* TX is on hold while the device is down or while we are off-channel,
+	 * so a stalled DMA index is expected there. Don't reset the hardware
+	 * for it, and don't let the counters accumulate either.
+	 */
+	if (!test_bit(MT76_STATE_RUNNING, &dev->mphy.state) ||
+	    (mt76_hw(dev)->conf.flags & IEEE80211_CONF_OFFCHANNEL)) {
+		memset(dev->tx_hang_check, 0, sizeof(dev->tx_hang_check));
+		return;
+	}
+
 	if (!mt76x02_tx_hang(dev) && !dev->mcu_timeout)
 		return;
 
@@ -605,7 +605,6 @@ static void mt76x02_check_tx_hang(struct mt76x02_dev *dev)
 
 	dev->tx_hang_reset++;
 	memset(dev->tx_hang_check, 0, sizeof(dev->tx_hang_check));
-	dev->last_tx_activity = jiffies;
 	memset(dev->mt76.tx_dma_idx, 0xff,
 	       sizeof(dev->mt76.tx_dma_idx));
 }

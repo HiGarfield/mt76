@@ -20,9 +20,6 @@ int mt76x02_mcu_msg_send(struct mt76_dev *mdev, int cmd, const void *data,
 	int ret;
 	u8 seq;
 
-	if (dev->mcu_timeout)
-		return -EIO;
-
 	skb = mt76_mcu_msg_alloc(mdev, data, len);
 	if (!skb)
 		return -ENOMEM;
@@ -63,8 +60,13 @@ int mt76x02_mcu_msg_send(struct mt76_dev *mdev, int cmd, const void *data,
 			check_seq = true;
 
 		dev_kfree_skb(skb);
-		if (check_seq)
+		if (check_seq) {
+			/* the mcu is still talking to us, so a previous timeout
+			 * was transient - don't let it escalate into a reset
+			 */
+			dev->mcu_timeout = 0;
 			break;
+		}
 	}
 
 out:
