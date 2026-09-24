@@ -651,6 +651,23 @@ void mt7915_unregister_ext_phy(struct mt7915_dev *dev)
 	ieee80211_free_hw(mphy->hw);
 }
 
+static void mt7915_stop_hardware(struct mt7915_dev *dev)
+{
+	int i;
+
+	/* the rx napi instances are created and enabled by the generic mt76
+	 * dma code, so they have to be disabled here before the hardware is
+	 * torn down. otherwise they can still be scheduled while the rx rings
+	 * are already gone, and deleting them while enabled triggers warnings
+	 * in __netif_napi_del_locked() on newer kernels.
+	 */
+	mt76_for_each_q_rx(&dev->mt76, i)
+		napi_disable(&dev->mt76.napi[i]);
+
+	mt7915_mcu_exit(dev);
+	mt7915_dma_cleanup(dev);
+}
+
 int mt7915_register_device(struct mt7915_dev *dev)
 {
 	struct ieee80211_hw *hw = mt76_hw(dev);
@@ -689,11 +706,16 @@ int mt7915_register_device(struct mt7915_dev *dev)
 	ret = mt76_register_device(&dev->mt76, true, mt7915_rates,
 				   ARRAY_SIZE(mt7915_rates));
 	if (ret)
-		return ret;
+		goto stop_hw;
 
 	ieee80211_queue_work(mt76_hw(dev), &dev->init_work);
 
 	return mt7915_init_debugfs(dev);
+
+stop_hw:
+	mt7915_stop_hardware(dev);
+
+	return ret;
 }
 
 void mt7915_unregister_device(struct mt7915_dev *dev)
@@ -703,8 +725,7 @@ void mt7915_unregister_device(struct mt7915_dev *dev)
 
 	mt7915_unregister_ext_phy(dev);
 	mt76_unregister_device(&dev->mt76);
-	mt7915_mcu_exit(dev);
-	mt7915_dma_cleanup(dev);
+	mt7915_stop_hardware(dev);
 
 	spin_lock_bh(&dev->token_lock);
 	idr_for_each_entry(&dev->token, txwi, id) {
