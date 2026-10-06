@@ -1781,6 +1781,9 @@ mt7615_mcu_uni_add_bss(struct mt7615_phy *phy, struct ieee80211_vif *vif,
 			conn_type = CONNECTION_INFRA_AP;
 		basic_req.basic.conn_type = cpu_to_le32(conn_type);
 		break;
+	case NL80211_IFTYPE_MONITOR:
+		basic_req.basic.conn_type = cpu_to_le32(CONNECTION_INFRA_AP);
+		break;
 	case NL80211_IFTYPE_STATION:
 		if (vif->p2p)
 			conn_type = CONNECTION_P2P_GC;
@@ -1796,7 +1799,11 @@ mt7615_mcu_uni_add_bss(struct mt7615_phy *phy, struct ieee80211_vif *vif,
 		break;
 	}
 
-	memcpy(basic_req.basic.bssid, vif->bss_conf.bssid, ETH_ALEN);
+	if (vif->type != NL80211_IFTYPE_MONITOR) {
+		memcpy(basic_req.basic.bssid, vif->bss_conf.bssid, ETH_ALEN);
+	} else {
+		memcpy(basic_req.basic.bssid, dev->mt76.macaddr, ETH_ALEN);
+	}
 	basic_req.basic.bmc_tx_wlan_idx = cpu_to_le16(mvif->sta.wcid.idx);
 	basic_req.basic.sta_idx = cpu_to_le16(mvif->sta.wcid.idx);
 	basic_req.basic.conn_state = !enable;
