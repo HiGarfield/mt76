@@ -642,9 +642,17 @@ int mt7615_mac_sta_add(struct mt76_dev *mdev, struct ieee80211_vif *vif,
 	msta->wcid.idx = idx;
 	msta->wcid.ext_phy = mvif->band_idx;
 
+	/*
+	 * Publish the wcid before the firmware is told about the station.
+	 * The MCU commands below can make it report tx status events for
+	 * this wcid right away, while mt76_sta_add() only publishes it
+	 * after drv->sta_add() has returned.
+	 */
+	rcu_assign_pointer(dev->mt76.wcid[idx], &msta->wcid);
+
 	err = mt7615_pm_wake(dev);
 	if (err)
-		return err;
+		goto error;
 
 	if (vif->type == NL80211_IFTYPE_STATION && !sta->tdls) {
 		struct mt7615_phy *phy;
@@ -659,6 +667,11 @@ int mt7615_mac_sta_add(struct mt76_dev *mdev, struct ieee80211_vif *vif,
 	mt7615_pm_power_save_sched(dev);
 
 	return 0;
+
+error:
+	rcu_assign_pointer(dev->mt76.wcid[idx], NULL);
+
+	return err;
 }
 EXPORT_SYMBOL_GPL(mt7615_mac_sta_add);
 

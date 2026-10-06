@@ -514,11 +514,29 @@ int mt7915_mac_sta_add(struct mt76_dev *mdev, struct ieee80211_vif *vif,
 	mt7915_mac_wtbl_update(dev, idx,
 			       MT_WTBL_UPDATE_ADM_COUNT_CLEAR);
 
+	/*
+	 * Publish the wcid before the firmware is told about the station.
+	 * mt7915_mcu_add_sta()/mt7915_mcu_add_sta_adv() can make the
+	 * firmware report tx free / tx status / rate events for this wcid
+	 * right away, while mt76_sta_add() only publishes it after
+	 * drv->sta_add() has returned.
+	 */
+	rcu_assign_pointer(dev->mt76.wcid[idx], &msta->wcid);
+
 	ret = mt7915_mcu_add_sta(dev, vif, sta, true);
 	if (ret)
-		return ret;
+		goto error;
 
-	return mt7915_mcu_add_sta_adv(dev, vif, sta, true);
+	ret = mt7915_mcu_add_sta_adv(dev, vif, sta, true);
+	if (ret)
+		goto error;
+
+	return 0;
+
+error:
+	rcu_assign_pointer(dev->mt76.wcid[idx], NULL);
+
+	return ret;
 }
 
 void mt7915_mac_sta_remove(struct mt76_dev *mdev, struct ieee80211_vif *vif,
