@@ -742,7 +742,12 @@ int mt76_skb_adjust_pad(struct sk_buff *skb)
 		}
 	}
 
-	if (skb_pad(last, pad))
+	/*
+	 * mt76_skb_pad() leaves the skb alone on failure, the callers
+	 * release it. skb_pad() would free it behind their back, which
+	 * turns their error path into a double free.
+	 */
+	if (mt76_skb_pad(last, pad))
 		return -ENOMEM;
 
 	__skb_put(last, pad);

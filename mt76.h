@@ -1067,6 +1067,43 @@ mt76u_bulk_msg(struct mt76_dev *dev, void *data, int len, int *actual_len,
 	return usb_bulk_msg(udev, pipe, data, len, actual_len, timeout);
 }
 
+/*
+ * Pad an skb without ever releasing it, so that the caller stays in charge
+ * of the cleanup.
+ *
+ * __skb_pad(skb, pad, free_on_error) is only exported since v4.19 and is
+ * not provided by backports 4.19 either, so kernel 4.4 has to be covered
+ * by this open coded variant. It mirrors what skb_pad() does on failure
+ * free-on-error targets, minus the kfree_skb() call: on any error the skb
+ * is left untouched and -ENOMEM is returned.
+ */
+static inline int mt76_skb_pad(struct sk_buff *skb, int pad)
+{
+	int ntail, err;
+
+	/* If the skbuff is non linear tailroom is always zero */
+	if (!skb_cloned(skb) && skb_tailroom(skb) >= pad) {
+		memset(skb->data + skb->len, 0, pad);
+		return 0;
+	}
+
+	ntail = skb->data_len + pad - skb_tailroom(skb);
+	if (likely(skb_cloned(skb) || ntail > 0)) {
+		err = pskb_expand_head(skb, 0, ntail, GFP_ATOMIC);
+		if (unlikely(err))
+			return -ENOMEM;
+	}
+
+	/* padding a non-linear skb requires its data to be linear */
+	err = skb_linearize(skb);
+	if (unlikely(err))
+		return -ENOMEM;
+
+	memset(skb->data + skb->len, 0, pad);
+
+	return 0;
+}
+
 int mt76_skb_adjust_pad(struct sk_buff *skb);
 int mt76u_vendor_request(struct mt76_dev *dev, u8 req,
 			 u8 req_type, u16 val, u16 offset,
