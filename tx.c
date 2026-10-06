@@ -187,7 +187,7 @@ mt76_tx_status_skb_add(struct mt76_dev *dev, struct mt76_wcid *wcid,
 	struct mt76_tx_cb *cb = mt76_tx_skb_cb(skb);
 	int pid;
 
-	if (!wcid || !rcu_access_pointer(dev->wcid[wcid->idx]))
+	if (!wcid)
 		return MT_PACKET_ID_NO_ACK;
 
 	if (info->flags & IEEE80211_TX_CTL_NO_ACK)
@@ -198,6 +198,19 @@ mt76_tx_status_skb_add(struct mt76_dev *dev, struct mt76_wcid *wcid,
 		return MT_PACKET_ID_NO_SKB;
 
 	spin_lock_bh(&dev->status_list.lock);
+
+	/*
+	 * The wcid slot has to be checked under status_list.lock, the same
+	 * lock mt76_sta_pre_rcu_remove() holds while clearing it, and it
+	 * has to be compared by identity: comparing against NULL only
+	 * misses a station removal followed by a new station reusing the
+	 * same index, which would keep tracking skbs for a wcid that is
+	 * already gone.
+	 */
+	if (rcu_access_pointer(dev->wcid[wcid->idx]) != wcid) {
+		spin_unlock_bh(&dev->status_list.lock);
+		return MT_PACKET_ID_NO_ACK;
+	}
 
 	memset(cb, 0, sizeof(*cb));
 	wcid->packet_id = (wcid->packet_id + 1) & MT_PACKET_ID_MASK;
