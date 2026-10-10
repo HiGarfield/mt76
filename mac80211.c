@@ -773,6 +773,13 @@ mt76_rx_convert(struct mt76_dev *dev, struct sk_buff *skb,
 	mstat = *((struct mt76_rx_status *)skb->cb);
 	memset(status, 0, sizeof(*status));
 
+	/* Set UP in skb->priority to allow DSCP learning at upper layers.
+	 * Only meaningful for QoS data frames: mt76x02 fills status->tid
+	 * from the RXWI unconditionally, so guard on the frame type.
+	 */
+	if (ieee80211_is_data_qos(hdr->frame_control))
+		skb->priority = mstat.tid;
+
 	status->flag = mstat.flag;
 	status->freq = mstat.freq;
 	status->enc_flags = mstat.enc_flags;
