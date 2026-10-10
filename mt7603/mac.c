@@ -1304,7 +1304,7 @@ void mt7603_mac_add_txs(struct mt7603_dev *dev, void *data)
 	msta = container_of(wcid, struct mt7603_sta, wcid);
 	sta = wcid_to_sta(wcid);
 
-	if (!test_bit(MT76_MCU_RESET, &dev->mphy.state)) {
+	if (!test_bit(MT76_MCU_RESET, &dev->mphy.state) && wcid->sta) {
 		spin_lock_bh(&dev->sta_poll_lock);
 		if (list_empty(&msta->poll_list))
 			list_add_tail(&msta->poll_list, &dev->sta_poll_list);
