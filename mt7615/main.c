@@ -201,11 +201,9 @@ static int mt7615_add_interface(struct ieee80211_hw *hw,
 	mvif->omac_idx = idx;
 
 	mvif->band_idx = ext_phy;
-	if (mt7615_ext_phy(dev))
-		mvif->wmm_idx = ext_phy * (MT7615_MAX_WMM_SETS / 2) +
-				mvif->idx % (MT7615_MAX_WMM_SETS / 2);
-	else
-		mvif->wmm_idx = mvif->idx % MT7615_MAX_WMM_SETS;
+	mvif->wmm_idx = vif->type != NL80211_IFTYPE_AP;
+	if (ext_phy)
+		mvif->wmm_idx += 2;
 
 	dev->mphy.vif_mask |= BIT(mvif->idx);
 	dev->omac_mask |= BIT_ULL(mvif->omac_idx);
