@@ -2140,25 +2140,26 @@ static int mt7615_load_patch(struct mt7615_dev *dev, u32 addr, const char *name)
 	const struct firmware *fw = NULL;
 	int len, ret, sem;
 
-	sem = mt7615_mcu_patch_sem_ctrl(dev, 1);
-	switch (sem) {
-	case PATCH_IS_DL:
-		return 0;
-	case PATCH_NOT_DL_SEM_SUCCESS:
-		break;
-	default:
-		dev_err(dev->mt76.dev, "Failed to get patch semaphore\n");
-		return -EAGAIN;
-	}
-
 	ret = firmware_request_nowarn(&fw, name, dev->mt76.dev);
 	if (ret)
-		goto out;
+		return ret;
 
 	if (!fw || !fw->data || fw->size < sizeof(*hdr)) {
 		dev_err(dev->mt76.dev, "Invalid firmware\n");
 		ret = -EINVAL;
-		goto out;
+		goto release_fw;
+	}
+
+	sem = mt7615_mcu_patch_sem_ctrl(dev, 1);
+	switch (sem) {
+	case PATCH_IS_DL:
+		goto release_fw;
+	case PATCH_NOT_DL_SEM_SUCCESS:
+		break;
+	default:
+		dev_err(dev->mt76.dev, "Failed to get patch semaphore\n");
+		ret = -EAGAIN;
+		goto release_fw;
 	}
 
 	hdr = (const struct mt7615_patch_hdr *)(fw->data);
@@ -2185,8 +2186,6 @@ static int mt7615_load_patch(struct mt7615_dev *dev, u32 addr, const char *name)
 		dev_err(dev->mt76.dev, "Failed to start patch\n");
 
 out:
-	release_firmware(fw);
-
 	sem = mt7615_mcu_patch_sem_ctrl(dev, 0);
 	switch (sem) {
 	case PATCH_REL_SEM_SUCCESS:
@@ -2196,6 +2195,9 @@ out:
 		dev_err(dev->mt76.dev, "Failed to release patch semaphore\n");
 		break;
 	}
+
+release_fw:
+	release_firmware(fw);
 
 	return ret;
 }
