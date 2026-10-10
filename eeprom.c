@@ -58,8 +58,11 @@ mt76_get_of_eeprom(struct mt76_dev *dev, int len)
 	put_mtd_device(mtd);
 	if (mtd_is_bitflip(ret))
 		ret = 0;
-	if (ret)
+	if (ret) {
+		dev_err(dev->dev, "reading EEPROM from mtd %s failed: %i\n",
+			part, ret);
 		goto out_put_node;
+	}
 
 	if (retlen < len) {
 		ret = -EINVAL;
