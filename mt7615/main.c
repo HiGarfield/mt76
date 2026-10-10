@@ -74,7 +74,7 @@ static int mt7615_start(struct ieee80211_hw *hw)
 				     MT7615_WATCHDOG_TIME);
 
 	if (!running)
-		mt7615_mac_reset_counters(dev);
+		mt7615_mac_reset_counters(phy);
 
 	mt7615_mutex_release(dev);
 
@@ -347,7 +347,7 @@ int mt7615_set_channel(struct mt7615_phy *phy)
 	mt7615_mac_cca_stats_reset(phy);
 	mt7615_mcu_set_sku_en(phy, !mt76_testmode_enabled(&dev->mt76));
 
-	mt7615_mac_reset_counters(dev);
+	mt7615_mac_reset_counters(phy);
 	phy->noise = 0;
 	phy->chfreq = mt76_rr(dev, MT_CHFREQ(ext_phy));
 
