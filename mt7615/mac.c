@@ -1473,21 +1473,29 @@ mt7615_mac_tx_free_token(struct mt7615_dev *dev, u16 token)
 static void mt7615_mac_tx_free(struct mt7615_dev *dev, struct sk_buff *skb)
 {
 	struct mt7615_tx_free *free = (struct mt7615_tx_free *)skb->data;
+	void *end = skb->data + skb->len;
 	u8 i, count;
 
 	count = FIELD_GET(MT_TX_FREE_MSDU_ID_CNT, le16_to_cpu(free->ctrl));
 	if (is_mt7615(&dev->mt76)) {
 		__le16 *token = &free->token[0];
 
+		if (WARN_ON_ONCE((void *)&token[count] > end))
+			goto free_skb;
+
 		for (i = 0; i < count; i++)
 			mt7615_mac_tx_free_token(dev, le16_to_cpu(token[i]));
 	} else {
 		__le32 *token = (__le32 *)&free->token[0];
 
+		if (WARN_ON_ONCE((void *)&token[count] > end))
+			goto free_skb;
+
 		for (i = 0; i < count; i++)
 			mt7615_mac_tx_free_token(dev, le32_to_cpu(token[i]));
 	}
 
+free_skb:
 	dev_kfree_skb(skb);
 
 	if (test_bit(MT76_STATE_PM, &dev->phy.mt76->state))
