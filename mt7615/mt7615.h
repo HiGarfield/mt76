@@ -506,6 +506,15 @@ static inline u16 mt7615_wtbl_size(struct mt7615_dev *dev)
 		return MT7615_WTBL_SIZE;
 }
 
+static inline unsigned long
+mt7615_get_macwork_timeout(struct mt7615_dev *dev)
+{
+	if (dev->pm.enable)
+		return HZ / 3;
+	else
+		return HZ / 10;
+}
+
 static inline void mt7615_mutex_acquire(struct mt7615_dev *dev)
 	 __acquires(&dev->mt76.mutex)
 {

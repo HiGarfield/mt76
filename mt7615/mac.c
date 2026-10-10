@@ -2096,7 +2096,7 @@ void mt7615_mac_work(struct work_struct *work)
 
 	mt76_tx_status_check(mdev, NULL, false);
 	ieee80211_queue_delayed_work(phy->mt76->hw, &phy->mac_work,
-				     MT7615_WATCHDOG_TIME);
+				     mt7615_get_macwork_timeout(phy->dev));
 }
 
 static bool

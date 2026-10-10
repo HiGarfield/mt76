@@ -71,7 +71,7 @@ static int mt7615_start(struct ieee80211_hw *hw)
 	set_bit(MT76_STATE_RUNNING, &phy->mt76->state);
 
 	ieee80211_queue_delayed_work(hw, &phy->mac_work,
-				     MT7615_WATCHDOG_TIME);
+				     mt7615_get_macwork_timeout(dev));
 
 	if (!running)
 		mt7615_mac_reset_counters(phy);
@@ -360,7 +360,7 @@ out:
 
 	if (!mt76_testmode_enabled(&dev->mt76))
 		ieee80211_queue_delayed_work(phy->mt76->hw, &phy->mac_work,
-					     MT7615_WATCHDOG_TIME);
+					     mt7615_get_macwork_timeout(dev));
 
 	return ret;
 }
@@ -1281,7 +1281,7 @@ static int mt7615_resume(struct ieee80211_hw *hw)
 					    mt7615_mcu_set_suspend_iter, phy);
 
 	ieee80211_queue_delayed_work(hw, &phy->mac_work,
-				     MT7615_WATCHDOG_TIME);
+				     mt7615_get_macwork_timeout(dev));
 	mt76_clear(dev, MT_WF_RFCR(ext_phy), MT_WF_RFCR_DROP_OTHER_BEACON);
 
 	mt7615_mutex_release(dev);
