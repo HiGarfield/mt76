@@ -413,7 +413,9 @@ mt7603_sta_assoc(struct mt76_dev *mdev, struct ieee80211_vif *vif,
 	 */
 	msta->smps = ~0;
 
+	mutex_lock(&dev->mt76.mutex);
 	mt7603_wtbl_update_cap(dev, sta);
+	mutex_unlock(&dev->mt76.mutex);
 }
 
 void
