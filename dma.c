@@ -131,12 +131,24 @@ mt76_dma_tx_cleanup_idx(struct mt76_dev *dev, struct mt76_queue *q, int idx,
 	memset(e, 0, sizeof(*e));
 }
 
+/* A hung bus (e.g. after a PCIe AER error) reads 0xffffffff from every
+ * register, so clamp an out-of-range index to the fallback to keep it from
+ * corrupting q->head/q->tail.
+ */
+static int
+mt76_dma_read_dma_idx(struct mt76_queue *q, int fallback)
+{
+	u32 idx = readl(&q->regs->dma_idx);
+
+	return idx < q->ndesc ? idx : fallback;
+}
+
 static void
 mt76_dma_sync_idx(struct mt76_dev *dev, struct mt76_queue *q)
 {
 	writel(q->desc_dma, &q->regs->desc_base);
 	writel(q->ndesc, &q->regs->ring_size);
-	q->head = readl(&q->regs->dma_idx);
+	q->head = mt76_dma_read_dma_idx(q, 0);
 	q->tail = q->head;
 }
 
@@ -164,7 +176,7 @@ mt76_dma_tx_cleanup(struct mt76_dev *dev, enum mt76_txq_id qid, bool flush)
 	if (flush)
 		last = -1;
 	else
-		last = readl(&q->regs->dma_idx);
+		last = mt76_dma_read_dma_idx(q, -1);
 
 	while ((q->queued > n_queued) && q->tail != last) {
 		mt76_dma_tx_cleanup_idx(dev, q, q->tail, &entry);
@@ -184,7 +196,7 @@ mt76_dma_tx_cleanup(struct mt76_dev *dev, enum mt76_txq_id qid, bool flush)
 		}
 
 		if (!flush && q->tail == last)
-			last = readl(&q->regs->dma_idx);
+			last = mt76_dma_read_dma_idx(q, -1);
 	}
 
 	spin_lock_bh(&q->lock);
@@ -296,8 +308,8 @@ mt76_dma_tx_queue_skb_raw(struct mt76_dev *dev, enum mt76_txq_id qid,
 		dma_unmap_single(dev->dev, buf.addr, buf.len, DMA_TO_DEVICE);
 		goto error;
 	}
-	mt76_dma_add_buf(dev, q, &buf, 1, tx_info, skb, NULL);
-	mt76_dma_kick_queue(dev, q);
+	if (mt76_dma_add_buf(dev, q, &buf, 1, tx_info, skb, NULL) >= 0)
+		mt76_dma_kick_queue(dev, q);
 	spin_unlock_bh(&q->lock);
 
 	return 0;
