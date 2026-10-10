@@ -1106,7 +1106,7 @@ mt7615_mcu_sta_ba_tlv(struct sk_buff *skb,
 
 static void
 mt7615_mcu_sta_basic_tlv(struct sk_buff *skb, struct ieee80211_vif *vif,
-			 struct ieee80211_sta *sta, bool enable)
+			 struct ieee80211_sta *sta, bool enable, bool new_entry)
 {
 	struct sta_rec_basic *basic;
 	struct tlv *tlv;
@@ -1118,7 +1118,8 @@ mt7615_mcu_sta_basic_tlv(struct sk_buff *skb, struct ieee80211_vif *vif,
 	basic->extra_info = cpu_to_le16(EXTRA_INFO_VER);
 
 	if (enable) {
-		basic->extra_info |= cpu_to_le16(EXTRA_INFO_NEW);
+		if (new_entry)
+			basic->extra_info |= cpu_to_le16(EXTRA_INFO_NEW);
 		basic->conn_state = CONN_STATE_PORT_SECURE;
 	} else {
 		basic->conn_state = CONN_STATE_DISCONNECT;
@@ -1473,15 +1474,23 @@ mt7615_mcu_wtbl_sta_add(struct mt7615_dev *dev, struct ieee80211_vif *vif,
 	struct sk_buff *skb, *sskb, *wskb = NULL;
 	struct wtbl_req_hdr *wtbl_hdr;
 	struct mt7615_sta *msta;
+	bool new_entry = true;
 	int cmd, err;
 
 	msta = sta ? (struct mt7615_sta *)sta->drv_priv : &mvif->sta;
+
+	if (!sta) {
+		if (mvif->sta_added)
+			new_entry = false;
+		else
+			mvif->sta_added = true;
+	}
 
 	sskb = mt7615_mcu_alloc_sta_req(dev, mvif, msta);
 	if (IS_ERR(sskb))
 		return PTR_ERR(sskb);
 
-	mt7615_mcu_sta_basic_tlv(sskb, vif, sta, enable);
+	mt7615_mcu_sta_basic_tlv(sskb, vif, sta, enable, new_entry);
 	if (enable && sta) {
 		mt7615_mcu_sta_ht_tlv(sskb, sta);
 		mt7615_mcu_sta_uapsd(sskb, vif, sta);
@@ -1586,14 +1595,22 @@ mt7615_mcu_add_sta_cmd(struct mt7615_dev *dev, struct ieee80211_vif *vif,
 	struct mt7615_sta *msta;
 	struct tlv *sta_wtbl;
 	struct sk_buff *skb;
+	bool new_entry = true;
 
 	msta = sta ? (struct mt7615_sta *)sta->drv_priv : &mvif->sta;
+
+	if (!sta) {
+		if (mvif->sta_added)
+			new_entry = false;
+		else
+			mvif->sta_added = true;
+	}
 
 	skb = mt7615_mcu_alloc_sta_req(dev, mvif, msta);
 	if (IS_ERR(skb))
 		return PTR_ERR(skb);
 
-	mt7615_mcu_sta_basic_tlv(skb, vif, sta, enable);
+	mt7615_mcu_sta_basic_tlv(skb, vif, sta, enable, new_entry);
 	if (enable && sta) {
 		mt7615_mcu_sta_ht_tlv(skb, sta);
 		mt7615_mcu_sta_uapsd(skb, vif, sta);

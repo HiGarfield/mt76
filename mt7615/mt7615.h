@@ -158,6 +158,7 @@ struct mt7615_vif {
 	u8 band_idx;
 	u8 wmm_idx;
 	u8 scan_seq_num;
+	bool sta_added;
 
 	struct mt7615_sta sta;
 };
