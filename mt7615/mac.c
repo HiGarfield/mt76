@@ -2142,6 +2142,15 @@ void mt7615_dma_reset(struct mt7615_dev *dev)
 }
 EXPORT_SYMBOL_GPL(mt7615_dma_reset);
 
+static void
+mt7615_hif_int_event_trigger(struct mt7615_dev *dev, u8 event)
+{
+	mt76_wr(dev, MT_MCU_INT_EVENT, event);
+
+	mt7622_trigger_hif_int(dev, true);
+	mt7622_trigger_hif_int(dev, false);
+}
+
 void mt7615_mac_reset_work(struct work_struct *work)
 {
 	struct mt7615_phy *phy2;
@@ -2184,14 +2193,14 @@ void mt7615_mac_reset_work(struct work_struct *work)
 
 	mt7615_mutex_acquire(dev);
 
-	mt76_wr(dev, MT_MCU_INT_EVENT, MT_MCU_INT_EVENT_PDMA_STOPPED);
+	mt7615_hif_int_event_trigger(dev, MT_MCU_INT_EVENT_PDMA_STOPPED);
 
 	if (mt7615_wait_reset_state(dev, MT_MCU_CMD_RESET_DONE)) {
 		mt7615_dma_reset(dev);
 
 		mt76_wr(dev, MT_WPDMA_MEM_RNG_ERR, 0);
 
-		mt76_wr(dev, MT_MCU_INT_EVENT, MT_MCU_INT_EVENT_PDMA_INIT);
+		mt7615_hif_int_event_trigger(dev, MT_MCU_INT_EVENT_PDMA_INIT);
 		mt7615_wait_reset_state(dev, MT_MCU_CMD_RECOVERY_DONE);
 	}
 
@@ -2216,7 +2225,7 @@ void mt7615_mac_reset_work(struct work_struct *work)
 	if (ext_phy)
 		ieee80211_wake_queues(ext_phy->hw);
 
-	mt76_wr(dev, MT_MCU_INT_EVENT, MT_MCU_INT_EVENT_RESET_DONE);
+	mt7615_hif_int_event_trigger(dev, MT_MCU_INT_EVENT_RESET_DONE);
 	mt7615_wait_reset_state(dev, MT_MCU_CMD_NORMAL_STATE);
 
 	mt7615_update_beacons(dev);

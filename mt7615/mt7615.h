@@ -657,6 +657,7 @@ int mt7615_mcu_update_arp_filter(struct ieee80211_hw *hw,
 int __mt7663_load_firmware(struct mt7615_dev *dev);
 u32 mt7615_mcu_reg_rr(struct mt76_dev *dev, u32 offset);
 void mt7615_mcu_reg_wr(struct mt76_dev *dev, u32 offset, u32 val);
+void mt7622_trigger_hif_int(struct mt7615_dev *dev, bool en);
 
 /* usb */
 int mt7663_usb_sdio_tx_prepare_skb(struct mt76_dev *mdev, void *txwi_ptr,
