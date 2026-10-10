@@ -1065,6 +1065,21 @@ void mt7615_mac_set_rates(struct mt7615_phy *phy, struct mt7615_sta *sta,
 }
 EXPORT_SYMBOL_GPL(mt7615_mac_set_rates);
 
+void mt7615_mac_enable_rtscts(struct mt7615_dev *dev,
+			      struct ieee80211_vif *vif, bool enable)
+{
+	struct mt7615_vif *mvif = (struct mt7615_vif *)vif->drv_priv;
+	u32 addr;
+
+	addr = mt7615_mac_wtbl_addr(dev, mvif->sta.wcid.idx) + 3 * 4;
+
+	if (enable)
+		mt76_set(dev, addr, MT_WTBL_W3_RTS);
+	else
+		mt76_clear(dev, addr, MT_WTBL_W3_RTS);
+}
+EXPORT_SYMBOL_GPL(mt7615_mac_enable_rtscts);
+
 int mt7615_mac_wtbl_update_key(struct mt7615_dev *dev,
 			       struct mt76_wcid *wcid,
 			       u8 *key, u8 keylen,
