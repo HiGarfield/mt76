@@ -267,8 +267,8 @@ int mt7615_mcu_wait_response(struct mt7615_dev *dev, int cmd, int seq)
 	while (true) {
 		skb = mt76_mcu_get_response(&dev->mt76, expires);
 		if (!skb) {
-			dev_err(dev->mt76.dev, "Message %ld (seq %d) timeout\n",
-				cmd & MCU_CMD_MASK, seq);
+			dev_err(dev->mt76.dev, "Message %08x (seq %d) timeout\n",
+				cmd, seq);
 			return -ETIMEDOUT;
 		}
 
