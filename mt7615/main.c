@@ -276,6 +276,12 @@ static void mt7615_remove_interface(struct ieee80211_hw *hw,
 	}
 	mt7615_mcu_add_dev_info(dev, vif, false);
 
+	/* Flush any pending tx-status skbs before the wcid index is
+	 * released, so they cannot be matched by a new station that
+	 * reuses the same index.
+	 */
+	mt76_tx_status_check(&dev->mt76, &msta->wcid, true);
+
 	rcu_assign_pointer(dev->mt76.wcid[idx], NULL);
 	if (vif->txq)
 		mt76_txq_remove(&dev->mt76, vif->txq);

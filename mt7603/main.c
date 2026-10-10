@@ -99,6 +99,12 @@ mt7603_remove_interface(struct ieee80211_hw *hw, struct ieee80211_vif *vif)
 	mt76_wr(dev, MT_BSSID1(mvif->idx), 0);
 	mt7603_beacon_set_timer(dev, mvif->idx, 0);
 
+	/* Flush any pending tx-status skbs before the wcid index is
+	 * released, so they cannot be matched by a new station that
+	 * reuses the same index.
+	 */
+	mt76_tx_status_check(&dev->mt76, &msta->wcid, true);
+
 	rcu_assign_pointer(dev->mt76.wcid[idx], NULL);
 	mt76_txq_remove(&dev->mt76, vif->txq);
 

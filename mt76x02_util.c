@@ -348,6 +348,12 @@ void mt76x02_remove_interface(struct ieee80211_hw *hw,
 	struct mt76x02_dev *dev = hw->priv;
 	struct mt76x02_vif *mvif = (struct mt76x02_vif *)vif->drv_priv;
 
+	/* Flush any pending tx-status skbs before the wcid index is
+	 * released, so they cannot be matched by a new station that
+	 * reuses the same index.
+	 */
+	mt76_tx_status_check(&dev->mt76, &mvif->group_wcid, true);
+
 	mt76_txq_remove(&dev->mt76, vif->txq);
 	dev->mphy.vif_mask &= ~BIT(mvif->idx);
 	rcu_assign_pointer(dev->mt76.wcid[mvif->group_wcid.idx], NULL);
