@@ -313,6 +313,18 @@ error:
 	return -ENOMEM;
 }
 
+static bool
+mt76_tx_skb_has_odd_frag(struct sk_buff *skb)
+{
+	struct sk_buff *iter;
+
+	skb_walk_frags(skb, iter)
+		if ((unsigned long)iter->data & 1)
+			return true;
+
+	return false;
+}
+
 static int
 mt76_dma_tx_queue_skb(struct mt76_dev *dev, enum mt76_txq_id qid,
 		      struct sk_buff *skb, struct mt76_wcid *wcid,
@@ -341,6 +353,23 @@ mt76_dma_tx_queue_skb(struct mt76_dev *dev, enum mt76_txq_id qid,
 	skb->prev = skb->next = NULL;
 	if (dev->drv->drv_flags & MT_DRV_TX_ALIGNED4_SKBS)
 		mt76_insert_hdr_pad(skb);
+
+	/*
+	 * mac80211 pads an A-MSDU subframe by pushing the padding in front
+	 * of the next one, so the buffer of a subframe can start at an odd
+	 * address, and the TX DMA of mt76x02 hangs on such a buffer. Merge
+	 * the frame into a single buffer in that case, and make sure that
+	 * the buffer of the head frame starts at an even address as well.
+	 */
+	if (unlikely(dev->drv->drv_flags & MT_DRV_TX_EVEN_ADDR)) {
+		if (mt76_tx_skb_has_odd_frag(skb) && skb_linearize(skb))
+			goto free;
+
+		/* shift the payload by one byte to flip the parity */
+		if (((unsigned long)skb->data & 1) &&
+		    pskb_expand_head(skb, 1, 0, GFP_ATOMIC))
+			goto free;
+	}
 
 	len = skb_headlen(skb);
 	addr = dma_map_single(dev->dev, skb->data, len, DMA_TO_DEVICE);
