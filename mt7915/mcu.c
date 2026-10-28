@@ -353,9 +353,23 @@ static int
 mt7915_mcu_parse_response(struct mt7915_dev *dev, int cmd,
 			  struct sk_buff *skb, int seq)
 {
-	struct mt7915_mcu_rxd *rxd = (struct mt7915_mcu_rxd *)skb->data;
+	struct mt7915_mcu_rxd *rxd;
 	int ret = 0;
 
+	/* reject responses that are too short to hold the rx descriptor, or
+	 * the payload that the command handler below reads
+	 */
+	if (cmd == -MCU_CMD_PATCH_SEM_CONTROL) {
+		if (skb->len < sizeof(*rxd) - 4 + sizeof(u8)) {
+			ret = -EINVAL;
+			goto out;
+		}
+	} else if (skb->len < sizeof(*rxd)) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	rxd = (struct mt7915_mcu_rxd *)skb->data;
 	if (seq != rxd->seq) {
 		ret = -EAGAIN;
 		goto out;
@@ -367,6 +381,11 @@ mt7915_mcu_parse_response(struct mt7915_dev *dev, int cmd,
 		ret = *skb->data;
 		break;
 	case MCU_EXT_CMD_THERMAL_CTRL:
+		if (skb->len < sizeof(*rxd) + 4 + sizeof(__le32)) {
+			ret = -EINVAL;
+			goto out;
+		}
+
 		skb_pull(skb, sizeof(*rxd) + 4);
 		ret = le32_to_cpu(*(__le32 *)skb->data);
 		break;
