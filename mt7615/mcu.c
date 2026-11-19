@@ -3325,6 +3325,10 @@ int mt7615_mcu_hw_scan(struct mt7615_phy *phy, struct ieee80211_vif *vif,
 	if (!mt7615_firmware_offload(dev))
 		return 1;
 
+	/* max_scan_ie_len does not cover the per-band IEs of all bands */
+	if (sreq->ie_len > MT7615_SCAN_IE_LEN)
+		return -EINVAL;
+
 	skb = mt76_mcu_msg_alloc(&dev->mt76, NULL, sizeof(*req));
 	if (!skb)
 		return -ENOMEM;
