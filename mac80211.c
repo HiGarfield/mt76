@@ -703,25 +703,31 @@ void mt76_wcid_key_setup(struct mt76_dev *dev, struct mt76_wcid *wcid,
 			 struct ieee80211_key_conf *key)
 {
 	struct ieee80211_key_seq seq;
+	u8 *pn;
 	int i;
 
-	wcid->rx_check_pn = false;
-
-	if (!key)
+	/* an IGTK or BIGTK shares the wcid of the GTK */
+	if (key && mt76_key_is_bip(key))
 		return;
 
-	if (key->cipher != WLAN_CIPHER_SUITE_CCMP)
+	wcid->rx_check_pn = key && mt76_key_has_rx_pn(key);
+	if (!wcid->rx_check_pn)
 		return;
 
-	wcid->rx_check_pn = true;
+	if (key->cipher == WLAN_CIPHER_SUITE_GCMP ||
+	    key->cipher == WLAN_CIPHER_SUITE_GCMP_256)
+		pn = seq.gcmp.pn;
+	else
+		pn = seq.ccmp.pn;
+
 	for (i = 0; i < IEEE80211_NUM_TIDS; i++) {
 		ieee80211_get_key_rx_seq(key, i, &seq);
-		memcpy(wcid->rx_key_pn[i], seq.ccmp.pn, sizeof(seq.ccmp.pn));
+		memcpy(wcid->rx_key_pn[i], pn, sizeof(wcid->rx_key_pn[i]));
 	}
 
 	/* robust management frame */
 	ieee80211_get_key_rx_seq(key, -1, &seq);
-	memcpy(wcid->rx_key_pn[i], seq.ccmp.pn, sizeof(seq.ccmp.pn));
+	memcpy(wcid->rx_key_pn[i], pn, sizeof(wcid->rx_key_pn[i]));
 }
 EXPORT_SYMBOL(mt76_wcid_key_setup);
 
