@@ -119,13 +119,14 @@ static int mt7663s_rx_run_queue(struct mt76_dev *dev, enum mt76_rxq_id qid,
 		struct mt76_queue_entry *e = &q->entry[index];
 
 		len = intr->rx.len[qid][i];
+		if (q->queued + i + 1 == q->ndesc)
+			break;
+
 		e->skb = mt7663s_build_rx_skb(buf, len, round_up(len + 4, 4));
 		if (!e->skb)
 			break;
 
 		buf += round_up(len + 4, 4);
-		if (q->queued + i + 1 == q->ndesc)
-			break;
 	}
 	put_page(page);
 
