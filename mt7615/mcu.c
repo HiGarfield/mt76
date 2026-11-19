@@ -180,6 +180,40 @@ static int __mt7615_mcu_msg_send(struct mt7615_dev *dev, struct sk_buff *skb,
 	return mt76_tx_queue_skb_raw(dev, qid, skb, 0);
 }
 
+#define MT7615_MCU_STATUS_WLAN_FAILURE	0xc0000001
+
+static int
+mt7615_mcu_uni_status_err(u32 status)
+{
+	if (!status)
+		return 0;
+
+	if (status == MT7615_MCU_STATUS_WLAN_FAILURE)
+		return -ENOLINK;
+
+	return -EREMOTEIO;
+}
+
+static int
+mt7615_mcu_uni_bss_deact_err(struct mt7615_dev *dev, int err, bool enable)
+{
+	if (err != -ENOLINK)
+		return err;
+
+	/* Ignore wlan_failure state false alarm when deactivating an
+	 * inactive network. It does not harm the firmware state.
+	 */
+	if (!enable) {
+		dev_dbg(dev->mt76.dev,
+			"ignore wlan_failure when bss is deactivated\n");
+		return 0;
+	}
+
+	dev_warn(dev->mt76.dev, "wlan_failure when bss is activated\n");
+
+	return err;
+}
+
 static int
 mt7615_mcu_parse_response(struct mt7615_dev *dev, int cmd,
 			  struct sk_buff *skb, int seq)
@@ -234,7 +268,7 @@ mt7615_mcu_parse_response(struct mt7615_dev *dev, int cmd,
 		}
 		skb_pull(skb, sizeof(*rxd));
 		event = (struct mt7615_mcu_uni_event *)skb->data;
-		ret = le32_to_cpu(event->status);
+		ret = mt7615_mcu_uni_status_err(le32_to_cpu(event->status));
 		break;
 	}
 	case MCU_CMD_REG_READ: {
@@ -1735,6 +1769,8 @@ mt7615_mcu_uni_add_dev(struct mt7615_dev *dev,
 	len = enable ? sizeof(dev_req) : sizeof(basic_req);
 
 	err = __mt76_mcu_send_msg(&dev->mt76, cmd, data, len, true);
+	if (err && cmd == MCU_UNI_CMD_BSS_INFO_UPDATE)
+		err = mt7615_mcu_uni_bss_deact_err(dev, err, enable);
 	if (err < 0)
 		return err;
 
@@ -1742,7 +1778,11 @@ mt7615_mcu_uni_add_dev(struct mt7615_dev *dev,
 	data = enable ? (void *)&basic_req : (void *)&dev_req;
 	len = enable ? sizeof(basic_req) : sizeof(dev_req);
 
-	return __mt76_mcu_send_msg(&dev->mt76, cmd, data, len, true);
+	err = __mt76_mcu_send_msg(&dev->mt76, cmd, data, len, true);
+	if (err && cmd == MCU_UNI_CMD_BSS_INFO_UPDATE)
+		err = mt7615_mcu_uni_bss_deact_err(dev, err, enable);
+
+	return err;
 }
 
 static int
