@@ -1175,7 +1175,7 @@ static int mt7615_remain_on_channel(struct ieee80211_hw *hw,
 	int err;
 
 	if (test_and_set_bit(MT76_STATE_ROC, &phy->mt76->state))
-		return 0;
+		return -EBUSY;
 
 	mt7615_mutex_acquire(phy->dev);
 
