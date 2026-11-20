@@ -28,6 +28,25 @@ static const struct usb_device_id mt76x2u_device_table[] = {
 	{ },
 };
 
+/* At SuperSpeed the MT7612U wedges its bulk OUT path on TX frames longer
+ * than 3072 bytes (TXWI and 802.11 frame), which only A-MSDUs reach. mt76
+ * adds 22 bytes (TXWI, header padding) to the MPDU, and mac80211 counts
+ * each new subframe up to 11 bytes (LLC header, padding) short, plus the
+ * 14-byte subframe header it adds to the first subframe after the check.
+ */
+#define MT76X2U_SS_MAX_AMSDU_LEN	(3072 - 22 - 11 - 14)
+
+static int mt76x2u_sta_add(struct mt76_dev *mdev, struct ieee80211_vif *vif,
+			   struct ieee80211_sta *sta)
+{
+	struct usb_device *udev = interface_to_usbdev(to_usb_interface(mdev->dev));
+
+	if (udev->speed >= USB_SPEED_SUPER)
+		sta->max_amsdu_len = MT76X2U_SS_MAX_AMSDU_LEN;
+
+	return mt76x02_sta_add(mdev, vif, sta);
+}
+
 static int mt76x2u_probe(struct usb_interface *intf,
 			 const struct usb_device_id *id)
 {
@@ -41,7 +60,7 @@ static int mt76x2u_probe(struct usb_interface *intf,
 		.tx_status_data = mt76x02_tx_status_data,
 		.rx_skb = mt76x02_queue_rx_skb,
 		.sta_ps = mt76x02_sta_ps,
-		.sta_add = mt76x02_sta_add,
+		.sta_add = mt76x2u_sta_add,
 		.sta_remove = mt76x02_sta_remove,
 	};
 	struct usb_device *udev = interface_to_usbdev(intf);
