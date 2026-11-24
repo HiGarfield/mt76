@@ -187,9 +187,6 @@ mt7603_set_channel(struct mt7603_dev *dev, struct cfg80211_chan_def *def)
 
 	mt76_txq_schedule_all(&dev->mphy);
 
-	ieee80211_queue_delayed_work(mt76_hw(dev), &dev->mt76.mac_work,
-				     msecs_to_jiffies(MT7603_WATCHDOG_TIME));
-
 	/* reset channel stats */
 	mt76_clear(dev, MT_MIB_CTL, MT_MIB_CTL_READ_CLR_DIS);
 	mt76_set(dev, MT_MIB_CTL,
@@ -208,8 +205,8 @@ out:
 
 	tasklet_enable(&dev->mt76.pre_tbtt_tasklet);
 
-	if (failed)
-		mt7603_mac_work(&dev->mt76.mac_work.work);
+	ieee80211_queue_delayed_work(mt76_hw(dev), &dev->mt76.mac_work,
+				     failed ? 0 : msecs_to_jiffies(MT7603_WATCHDOG_TIME));
 
 	return ret;
 }
