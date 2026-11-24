@@ -2195,7 +2195,7 @@ static int mt7615_load_patch(struct mt7615_dev *dev, u32 addr, const char *name)
 {
 	const struct mt7615_patch_hdr *hdr;
 	const struct firmware *fw = NULL;
-	int len, ret, sem;
+	int i, len, ret, sem;
 
 	ret = firmware_request_nowarn(&fw, name, dev->mt76.dev);
 	if (ret)
@@ -2207,7 +2207,17 @@ static int mt7615_load_patch(struct mt7615_dev *dev, u32 addr, const char *name)
 		goto release_fw;
 	}
 
-	sem = mt7615_mcu_patch_sem_ctrl(dev, 1);
+	/*
+	 * On MT7663 the Bluetooth function shares the ROM patch, and the
+	 * semaphore is refused while it downloads the patch: wait for it.
+	 */
+	for (i = 0; i < 50; i++) {
+		sem = mt7615_mcu_patch_sem_ctrl(dev, 1);
+		if (sem != PATCH_NOT_DL_SEM_FAIL)
+			break;
+		msleep(100);
+	}
+
 	switch (sem) {
 	case PATCH_IS_DL:
 		goto release_fw;
