@@ -21,6 +21,11 @@ mt7663u_mcu_send_message(struct mt76_dev *mdev, struct sk_buff *skb,
 	int ret, seq, ep;
 	u32 len;
 
+	if (test_bit(MT76_MCU_RESET, &mdev->phy.state)) {
+		dev_kfree_skb(skb);
+		return -ESHUTDOWN;
+	}
+
 	mutex_lock(&mdev->mcu.mutex);
 
 	mt7615_mcu_fill_msg(dev, skb, cmd, &seq);

@@ -322,6 +322,11 @@ mt7615_mcu_send_message(struct mt76_dev *mdev, struct sk_buff *skb,
 	struct mt7615_dev *dev = container_of(mdev, struct mt7615_dev, mt76);
 	int ret, seq;
 
+	if (test_bit(MT76_MCU_RESET, &mdev->phy.state)) {
+		dev_kfree_skb(skb);
+		return -ESHUTDOWN;
+	}
+
 	mutex_lock(&mdev->mcu.mutex);
 
 	ret = __mt7615_mcu_msg_send(dev, skb, cmd, &seq);

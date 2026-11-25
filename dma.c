@@ -285,6 +285,11 @@ mt76_dma_tx_queue_skb_raw(struct mt76_dev *dev, enum mt76_txq_id qid,
 	struct mt76_queue_buf buf = {};
 	dma_addr_t addr;
 
+	if (test_bit(MT76_MCU_RESET, &dev->phy.state)) {
+		dev_kfree_skb(skb);
+		return -ESHUTDOWN;
+	}
+
 	if (q->queued + 1 >= q->ndesc - 1)
 		goto error;
 
