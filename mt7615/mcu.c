@@ -183,13 +183,17 @@ static int __mt7615_mcu_msg_send(struct mt7615_dev *dev, struct sk_buff *skb,
 #define MT7615_MCU_STATUS_WLAN_FAILURE	0xc0000001
 
 static int
-mt7615_mcu_uni_status_err(u32 status)
+mt7615_mcu_uni_status_err(struct mt7615_dev *dev, int cmd, int seq, u32 status)
 {
 	if (!status)
 		return 0;
 
 	if (status == MT7615_MCU_STATUS_WLAN_FAILURE)
 		return -ENOLINK;
+
+	dev_warn_ratelimited(dev->mt76.dev,
+			     "Message %08x (seq %d) failed: firmware status 0x%x\n",
+			     cmd, seq, status);
 
 	return -EREMOTEIO;
 }
@@ -268,7 +272,8 @@ mt7615_mcu_parse_response(struct mt7615_dev *dev, int cmd,
 		}
 		skb_pull(skb, sizeof(*rxd));
 		event = (struct mt7615_mcu_uni_event *)skb->data;
-		ret = mt7615_mcu_uni_status_err(le32_to_cpu(event->status));
+		ret = mt7615_mcu_uni_status_err(dev, cmd, seq,
+						le32_to_cpu(event->status));
 		break;
 	}
 	case MCU_CMD_REG_READ: {
