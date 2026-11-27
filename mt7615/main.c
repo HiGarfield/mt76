@@ -583,6 +583,7 @@ static void mt7615_bss_info_changed(struct ieee80211_hw *hw,
 				    struct ieee80211_bss_conf *info,
 				    u32 changed)
 {
+	struct mt7615_vif *mvif = (struct mt7615_vif *)vif->drv_priv;
 	struct mt7615_dev *dev = mt7615_hw_dev(hw);
 	struct mt7615_phy *phy = mt7615_hw_phy(hw);
 
@@ -617,6 +618,11 @@ static void mt7615_bss_info_changed(struct ieee80211_hw *hw,
 
 	if (changed & BSS_CHANGED_ARP_FILTER)
 		mt7615_mcu_update_arp_filter(hw, vif, info);
+
+	if ((changed & BSS_CHANGED_ASSOC) && !info->assoc) {
+		mvif->gtk_rekey_offload = false;
+		mvif->rx_group_pn.key_mask = 0;
+	}
 
 	mt7615_mutex_release(dev);
 }
@@ -1253,6 +1259,15 @@ static int mt7615_suspend(struct ieee80211_hw *hw,
 	return err;
 }
 
+static void
+mt7615_rx_group_pn_reset_iter(void *priv, u8 *mac, struct ieee80211_vif *vif)
+{
+	struct mt7615_vif *mvif = (struct mt7615_vif *)vif->drv_priv;
+
+	if (mvif->gtk_rekey_offload)
+		mt76_rx_group_pn_reset(&mvif->rx_group_pn);
+}
+
 static int mt7615_resume(struct ieee80211_hw *hw)
 {
 	struct mt7615_dev *dev = mt7615_hw_dev(hw);
@@ -1275,6 +1290,9 @@ static int mt7615_resume(struct ieee80211_hw *hw)
 	}
 
 	clear_bit(MT76_STATE_SUSPEND, &phy->mt76->state);
+	ieee80211_iterate_active_interfaces(hw,
+					    IEEE80211_IFACE_ITER_RESUME_ALL,
+					    mt7615_rx_group_pn_reset_iter, NULL);
 	ieee80211_iterate_active_interfaces(hw,
 					    IEEE80211_IFACE_ITER_RESUME_ALL,
 					    mt7615_mcu_set_suspend_iter, phy);
@@ -1300,10 +1318,12 @@ static void mt7615_set_rekey_data(struct ieee80211_hw *hw,
 				  struct ieee80211_vif *vif,
 				  struct cfg80211_gtk_rekey_data *data)
 {
+	struct mt7615_vif *mvif = (struct mt7615_vif *)vif->drv_priv;
 	struct mt7615_dev *dev = mt7615_hw_dev(hw);
 
 	mt7615_mutex_acquire(dev);
 	mt7615_mcu_update_gtk_rekey(hw, vif, data);
+	mvif->gtk_rekey_offload = true;
 	mt7615_mutex_release(dev);
 }
 #endif /* CONFIG_PM */
