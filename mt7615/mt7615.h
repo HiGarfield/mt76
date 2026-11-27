@@ -160,6 +160,7 @@ struct mt7615_vif {
 	u8 scan_seq_num;
 	bool sta_added;
 
+	struct mt76_rx_group_pn rx_group_pn;
 	struct mt7615_sta sta;
 };
 
