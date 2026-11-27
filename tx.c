@@ -300,6 +300,18 @@ void mt76_tx_complete_skb(struct mt76_dev *dev, struct sk_buff *skb)
 }
 EXPORT_SYMBOL_GPL(mt76_tx_complete_skb);
 
+static bool
+mt76_tx_ps_bufferable(struct sk_buff *skb, struct ieee80211_vif *vif)
+{
+	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
+
+	if (ieee80211_is_nullfunc(hdr->frame_control) ||
+	    ieee80211_is_qos_nullfunc(hdr->frame_control))
+		return vif && vif->type == NL80211_IFTYPE_AP;
+
+	return ieee80211_is_bufferable_mmpdu(hdr->frame_control);
+}
+
 void
 mt76_tx(struct mt76_phy *phy, struct ieee80211_sta *sta,
 	struct mt76_wcid *wcid, struct sk_buff *skb)
@@ -323,7 +335,7 @@ mt76_tx(struct mt76_phy *phy, struct ieee80211_sta *sta,
 
 	if ((dev->drv->drv_flags & MT_DRV_HW_MGMT_TXQ) &&
 	    !ieee80211_is_data_present(hdr->frame_control) &&
-	    (!ieee80211_is_bufferable_mmpdu(hdr->frame_control) ||
+	    (!mt76_tx_ps_bufferable(skb, info->control.vif) ||
 	     ieee80211_is_deauth(hdr->frame_control))) {
 		qid = MT_TXQ_PSD;
 		skb_set_queue_mapping(skb, qid);
