@@ -699,35 +699,62 @@ out:
 }
 EXPORT_SYMBOL_GPL(mt76_get_survey);
 
+static void
+mt76_key_rx_pn_get(struct ieee80211_key_conf *key, int tid, u8 *pn)
+{
+	struct ieee80211_key_seq seq;
+
+	ieee80211_get_key_rx_seq(key, tid, &seq);
+	if (key->cipher == WLAN_CIPHER_SUITE_GCMP ||
+	    key->cipher == WLAN_CIPHER_SUITE_GCMP_256)
+		memcpy(pn, seq.gcmp.pn, sizeof(seq.gcmp.pn));
+	else
+		memcpy(pn, seq.ccmp.pn, sizeof(seq.ccmp.pn));
+}
+
+static void
+mt76_wcid_group_key_setup(struct mt76_wcid *wcid,
+			  struct ieee80211_key_conf *key)
+{
+	struct mt76_rx_group_pn *group_pn = wcid->rx_group_pn;
+	int i;
+
+	if (!group_pn || key->keyidx >= ARRAY_SIZE(group_pn->pn))
+		return;
+
+	if (!mt76_key_has_rx_pn(key)) {
+		group_pn->key_mask &= ~BIT(key->keyidx);
+		return;
+	}
+
+	for (i = 0; i < IEEE80211_NUM_TIDS; i++)
+		mt76_key_rx_pn_get(key, i, group_pn->pn[key->keyidx][i]);
+
+	group_pn->key_mask |= BIT(key->keyidx);
+}
+
 void mt76_wcid_key_setup(struct mt76_dev *dev, struct mt76_wcid *wcid,
 			 struct ieee80211_key_conf *key)
 {
-	struct ieee80211_key_seq seq;
-	u8 *pn;
 	int i;
 
 	/* an IGTK or BIGTK shares the wcid of the GTK */
 	if (key && mt76_key_is_bip(key))
 		return;
 
+	if (key && !(key->flags & IEEE80211_KEY_FLAG_PAIRWISE))
+		mt76_wcid_group_key_setup(wcid, key);
+
 	wcid->rx_check_pn = key && mt76_key_has_rx_pn(key);
 	if (!wcid->rx_check_pn)
 		return;
 
-	if (key->cipher == WLAN_CIPHER_SUITE_GCMP ||
-	    key->cipher == WLAN_CIPHER_SUITE_GCMP_256)
-		pn = seq.gcmp.pn;
-	else
-		pn = seq.ccmp.pn;
-
-	for (i = 0; i < IEEE80211_NUM_TIDS; i++) {
-		ieee80211_get_key_rx_seq(key, i, &seq);
-		memcpy(wcid->rx_key_pn[i], pn, sizeof(wcid->rx_key_pn[i]));
-	}
+	/* data frame */
+	for (i = 0; i < IEEE80211_NUM_TIDS; i++)
+		mt76_key_rx_pn_get(key, i, wcid->rx_key_pn[i]);
 
 	/* robust management frame */
-	ieee80211_get_key_rx_seq(key, -1, &seq);
-	memcpy(wcid->rx_key_pn[i], pn, sizeof(wcid->rx_key_pn[i]));
+	mt76_key_rx_pn_get(key, -1, wcid->rx_key_pn[i]);
 }
 EXPORT_SYMBOL(mt76_wcid_key_setup);
 
@@ -817,6 +844,17 @@ mt76_rx_convert(struct mt76_dev *dev, struct sk_buff *skb,
 	*hw = mt76_phy_hw(dev, mstat.ext_phy);
 }
 
+static u8 *
+mt76_rx_group_pn(struct mt76_rx_status *status, int security_idx)
+{
+	struct mt76_rx_group_pn *group_pn = status->wcid->rx_group_pn;
+
+	if (!(group_pn->key_mask & BIT(status->key_id)))
+		return NULL;
+
+	return group_pn->pn[status->key_id][security_idx];
+}
+
 static int
 mt76_check_ccmp_pn(struct sk_buff *skb)
 {
@@ -825,6 +863,8 @@ mt76_check_ccmp_pn(struct sk_buff *skb)
 	struct ieee80211_hdr *hdr;
 	int security_idx;
 	int ret;
+	bool group;
+	u8 *rx_pn;
 
 	if (!(status->flag & RX_FLAG_DECRYPTED))
 		return 0;
@@ -832,8 +872,11 @@ mt76_check_ccmp_pn(struct sk_buff *skb)
 	if (status->flag & RX_FLAG_ONLY_MONITOR)
 		return 0;
 
-	if (!wcid || !wcid->rx_check_pn)
+	if (!wcid)
 		return 0;
+
+	group = status->group && wcid->rx_group_pn;
+	security_idx = status->tid;
 
 	hdr = mt76_skb_get_hdr(skb);
 	if (!(status->flag & RX_FLAG_IV_STRIPPED)) {
@@ -846,6 +889,10 @@ mt76_check_ccmp_pn(struct sk_buff *skb)
 			return 0;
 	}
 
+	/* group state has no counter for Management frames */
+	if (ieee80211_is_mgmt(hdr->frame_control))
+		group = false;
+
 	/* IEEE 802.11-2020, 12.5.3.4.4 "PN and replay detection" c):
 	 *
 	 * the recipient shall maintain a single replay counter for received
@@ -855,16 +902,22 @@ mt76_check_ccmp_pn(struct sk_buff *skb)
 	if (ieee80211_is_mgmt(hdr->frame_control) &&
 	    !ieee80211_has_tods(hdr->frame_control))
 		security_idx = IEEE80211_NUM_TIDS;
+
+	if (group)
+		rx_pn = mt76_rx_group_pn(status, security_idx);
+	else if (wcid->rx_check_pn)
+		rx_pn = wcid->rx_key_pn[security_idx];
 	else
-		security_idx = status->tid;
+		return 0;
+	if (!rx_pn)
+		return 0;
 
 	BUILD_BUG_ON(sizeof(status->iv) != sizeof(wcid->rx_key_pn[0]));
-	ret = memcmp(status->iv, wcid->rx_key_pn[security_idx],
-		     sizeof(status->iv));
+	ret = memcmp(status->iv, rx_pn, sizeof(status->iv));
 	if (ret <= 0)
 		return -EINVAL; /* replay */
 
-	memcpy(wcid->rx_key_pn[security_idx], status->iv, sizeof(status->iv));
+	memcpy(rx_pn, status->iv, sizeof(status->iv));
 
 	if (status->flag & RX_FLAG_IV_STRIPPED)
 		status->flag |= RX_FLAG_PN_VALIDATED;

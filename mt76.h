@@ -211,6 +211,11 @@ DECLARE_EWMA(signal, 10, 8);
 #define MT_WCID_TX_INFO_TXPWR_ADJ	GENMASK(25, 18)
 #define MT_WCID_TX_INFO_SET		BIT(31)
 
+struct mt76_rx_group_pn {
+	u8 key_mask;
+	u8 pn[4][IEEE80211_NUM_TIDS][6];
+};
+
 struct mt76_wcid {
 	struct mt76_rx_tid __rcu *aggr[IEEE80211_NUM_TIDS];
 
@@ -229,6 +234,7 @@ struct mt76_wcid {
 
 	u8 rx_check_pn;
 	u8 rx_key_pn[IEEE80211_NUM_TIDS + 1][6];
+	struct mt76_rx_group_pn *rx_group_pn;
 	u16 cipher;
 
 	u32 tx_info;
@@ -494,6 +500,7 @@ struct mt76_rx_status {
 
 	u8 ext_phy:1;
 	u8 aggr:1;
+	u8 group:1, key_id:2;
 	u8 tid;
 	u16 seqno;
 
@@ -974,6 +981,22 @@ mt76_key_is_bip(struct ieee80211_key_conf *key)
 
 void mt76_wcid_key_setup(struct mt76_dev *dev, struct mt76_wcid *wcid,
 			 struct ieee80211_key_conf *key);
+
+static inline void
+mt76_wcid_rx_group_pn_set(struct mt76_wcid *wcid, struct ieee80211_vif *vif,
+			  struct mt76_rx_group_pn *group_pn)
+{
+	wcid->rx_group_pn = vif->type == NL80211_IFTYPE_STATION ? group_pn : NULL;
+}
+
+static inline struct mt76_wcid *
+mt76_rx_group_wcid(struct mt76_wcid *wcid)
+{
+	if (!wcid || wcid->sta || !wcid->rx_group_pn)
+		return NULL;
+
+	return wcid;
+}
 
 void mt76_tx_status_lock(struct mt76_dev *dev, struct sk_buff_head *list)
 			 __acquires(&dev->status_list.lock);
