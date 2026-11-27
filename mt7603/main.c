@@ -70,6 +70,7 @@ mt7603_add_interface(struct ieee80211_hw *hw, struct ieee80211_vif *vif)
 	mvif->sta.wcid.idx = idx;
 	mvif->sta.wcid.hw_key_idx = -1;
 	mvif->sta.vif = mvif;
+	mt76_wcid_rx_group_pn_set(&mvif->sta.wcid, vif, &mvif->rx_group_pn);
 
 	eth_broadcast_addr(bc_addr);
 	mt7603_wtbl_init(dev, idx, mvif->idx, bc_addr);
